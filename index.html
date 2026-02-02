@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Lo-Fi Garden</title>
+    <style>
+        :root {
+            --bg-color: #f4eee0;
+            --stem-color: #8da47e;
+            --petal-color: #e6a4b4;
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            background-color: var(--bg-color);
+            overflow: hidden;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        /* The Lo-Fi Grain Overlay */
+        .overlay {
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            background: url('https://grainy-gradients.vercel.app/noise.svg');
+            opacity: 0.15;
+            z-index: 10;
+        }
+
+        .instructions {
+            position: absolute; top: 20px; left: 20px;
+            color: #6d5d6e;
+            opacity: 0.6;
+        }
+
+        .garden {
+            width: 100vw; height: 100vh;
+            position: relative;
+            cursor: crosshair;
+        }
+
+        .plant {
+            position: absolute;
+            bottom: 0;
+            transform-origin: bottom center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stem {
+            width: 4px;
+            background: var(--stem-color);
+            transition: height 5s ease-out;
+            border-radius: 2px;
+        }
+
+        .flower-head {
+            width: 0; height: 0;
+            background: var(--petal-color);
+            border-radius: 50%;
+            transition: all 3s ease-in-out;
+            transition-delay: 4s;
+            box-shadow: 0 0 15px rgba(230, 164, 180, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="overlay"></div>
+    <div class="instructions">click anywhere to plant a memory...</div>
+    <div class="garden" id="garden"></div>
+
+    <script>
+        const garden = document.getElementById('garden');
+        const colors = ['#e6a4b4', '#f3d7ca', '#abc4ff', '#dfccfb'];
+
+        garden.addEventListener('click', (e) => {
+            createPlant(e.clientX, window.innerHeight - e.clientY);
+        });
+
+        function createPlant(x, yFromBottom) {
+            const plant = document.createElement('div');
+            plant.className = 'plant';
+            plant.style.left = x + 'px';
+            plant.style.bottom = '0px';
+
+            const stem = document.createElement('div');
+            stem.className = 'stem';
+            stem.style.height = '0px';
+
+            const flower = document.createElement('div');
+            flower.className = 'flower-head';
+            flower.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+
+            plant.appendChild(flower);
+            plant.appendChild(stem);
+            garden.appendChild(plant);
+
+            // Trigger Growth
+            setTimeout(() => {
+                const finalHeight = Math.random() * 200 + 100;
+                const finalSize = Math.random() * 30 + 20;
+                
+                stem.style.height = finalHeight + 'px';
+                flower.style.width = finalSize + 'px';
+                flower.style.height = finalSize + 'px';
+                flower.style.marginBottom = '-10px'; // Sit on top of stem
+            }, 100);
+        }
+    </script>
+</body>
+</html>
