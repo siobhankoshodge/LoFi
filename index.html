@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Manifestation Meadow - Mobile Fix</title>
+    <title>Manifestation Meadow</title>
     <style>
         :root {
             --sky-top: #87ceeb;
@@ -14,30 +14,38 @@
 
         body, html {
             margin: 0; padding: 0;
-            width: 100%; height: 100%;
-            /* Use -webkit-fill-available for mobile browser height fixes */
-            height: -webkit-fill-available; 
+            width: 100%; height: 100%; height: -webkit-fill-available;
             background: linear-gradient(to bottom, var(--sky-top), var(--sky-bottom)) no-repeat;
             background-attachment: fixed;
             overflow: hidden;
             font-family: 'Courier New', Courier, monospace;
-            touch-action: manipulation; /* Prevents accidental zooming on clicks */
+            touch-action: manipulation;
         }
 
-        #interaction-layer {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 1; cursor: crosshair;
+        #start-prompt {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            padding: 20px 40px; background: white; border-radius: 50px;
+            font-weight: bold; color: var(--text-color); cursor: pointer;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); z-index: 10000;
+            border: 2px solid #a29bfe;
         }
 
         #garden { position: relative; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
 
-        /* THE MOBILE GRASS FIX: Lifted container slightly */
         #grass-container { 
-            position: absolute; 
-            bottom: 5px; /* Added small buffer for mobile home-bars */
-            left: 0; 
-            width: 100%; 
-            height: 100px; /* Taller container to ensure visibility */
-            z-index: 5; 
-            pointer-events: none; 
-            display: flex;
+            position: absolute; bottom: 15px; left: 0; width: 100%; 
+            height: 100px; z-index: 5; pointer-events: none; 
+            display: flex; align-items: flex-end;
+        }
+
+        .blade { 
+            position: absolute; bottom: 0; width: 3px; 
+            background: #94a684; border-radius: 3px 3px 0 0; 
+            transition: height 2s ease-out; opacity: 0.9;
+        }
+
+        .seed-word {
+            position: absolute; padding: 12px 24px;
+            background: #ffffff; border: 2px solid #a29bfe; border-radius: 30px;
+            color: var(--text-color); cursor: pointer; font-size: 16px; font-weight: bold;
+            box-shadow:
