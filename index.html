@@ -2,8 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lo-Fi Generative Garden</title>
+    <title>Lo-Fi Garden - Fixed</title>
     <style>
         :root {
             --bg-color: #f4eee0;
@@ -13,13 +12,21 @@
 
         body, html {
             margin: 0; padding: 0;
-            width: 100%; height: 100%;
+            width: 100vw; height: 100vh;
             background-color: var(--bg-color);
             overflow: hidden;
             font-family: 'Courier New', Courier, monospace;
         }
 
-        /* The Lo-Fi Grain Overlay */
+        /* Essential: Ensure the garden actually takes up space */
+        #garden {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            cursor: crosshair;
+            border-bottom: 5px solid #dcd6c8; /* The Ground Line */
+        }
+
         .overlay {
             position: fixed; top: 0; left: 0;
             width: 100%; height: 100%;
@@ -33,42 +40,120 @@
             position: absolute; top: 20px; left: 20px;
             color: var(--text-color);
             opacity: 0.6;
-            z-index: 5;
             pointer-events: none;
         }
 
-        .garden {
-            width: 100vw; height: 100vh;
-            position: relative;
-            cursor: crosshair;
-        }
-
-        /* The "Wind" Sway Animation */
         @keyframes sway {
-            0% { transform: rotate(-1.5deg) translateX(-2px); }
-            50% { transform: rotate(1.5deg) translateX(2px); }
-            100% { transform: rotate(-1.5deg) translateX(-2px); }
+            0% { transform: rotate(-1.5deg); }
+            50% { transform: rotate(1.5deg); }
+            100% { transform: rotate(-1.5deg); }
         }
 
         .plant {
             position: absolute;
-            bottom: 0;
+            bottom: 0; /* Anchors to the bottom of the garden */
             transform-origin: bottom center;
             display: flex;
             flex-direction: column;
             align-items: center;
-            /* Animation set via JS to randomize timing */
+            pointer-events: none;
         }
 
         .stem {
-            width: 4px;
+            width: 5px;
             background: var(--stem-color);
-            transition: height 5s cubic-bezier(0.45, 0.05, 0.55, 0.95);
-            border-radius: 2px;
+            height: 0; /* Starts at 0 */
+            transition: height 4s ease-out;
+            border-radius: 5px 5px 0 0;
         }
 
         .flower-canvas {
             opacity: 0;
-            transform: scale(0) translateY(20px);
-            transition: all 4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            transition-delay: 2s; /* Wait for stem to grow a bit */
+            transform: scale(0);
+            transition: all 3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition-delay: 1.5s;
+        }
+
+        .flower-canvas.bloomed {
+            opacity: 1;
+            transform: scale(1);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="overlay"></div>
+    <div class="instructions">Click the ground to grow a flower...</div>
+    <div class="garden" id="garden"></div>
+
+    <script>
+        const garden = document.getElementById('garden');
+        const colors = ['#e6a4b4', '#f3d7ca', '#abc4ff', '#dfccfb', '#ffd1dc'];
+
+        garden.addEventListener('click', (e) => {
+            // Calculate X based on the click
+            createPlant(e.clientX);
+        });
+
+        function createPlant(x) {
+            const plant = document.createElement('div');
+            plant.className = 'plant';
+            plant.style.left = (x - 60) + 'px'; // Center the 120px canvas
+            
+            const swayDuration = 3 + Math.random() * 3;
+            plant.style.animation = `sway ${swayDuration}s ease-in-out infinite`;
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 120;
+            canvas.height = 120;
+            canvas.className = 'flower-canvas';
+            
+            const stem = document.createElement('div');
+            stem.className = 'stem';
+
+            // Build the plant
+            plant.appendChild(canvas);
+            plant.appendChild(stem);
+            garden.appendChild(plant);
+
+            // 1. Draw the generative flower immediately (but it's hidden by CSS)
+            drawFlower(ctx, colors[Math.floor(Math.random() * colors.length)]);
+
+            // 2. Trigger growth after a tiny delay
+            setTimeout(() => {
+                const height = Math.random() * 300 + 200; // 200-500px tall
+                stem.style.height = height + 'px';
+                canvas.classList.add('bloomed');
+            }, 50);
+        }
+
+        function drawFlower(ctx, color) {
+            const petals = 6 + Math.floor(Math.random() * 6);
+            const radius = 25 + Math.random() * 15;
+            
+            ctx.clearRect(0, 0, 120, 120);
+            ctx.save();
+            ctx.translate(60, 60);
+            ctx.fillStyle = color;
+            
+            for (let i = 0; i < petals; i++) {
+                ctx.beginPath();
+                ctx.rotate((Math.PI * 2) / petals);
+                ctx.moveTo(0, 0);
+                ctx.quadraticCurveTo(radius, -radius, 0, -radius * 1.5);
+                ctx.quadraticCurveTo(-radius, -radius, 0, 0);
+                ctx.fill();
+                ctx.closePath();
+            }
+            
+            // Pollen center
+            ctx.beginPath();
+            ctx.arc(0, 0, 8, 0, Math.PI * 2);
+            ctx.fillStyle = '#f3e5ab';
+            ctx.fill();
+            ctx.restore();
+        }
+    </script>
+</body>
+</html>
