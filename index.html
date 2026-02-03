@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Manifestation Garden - Fixed</title>
+    <title>Wild Meadow Manifestation</title>
     <style>
         :root {
             --sky-top: #87ceeb;
@@ -14,7 +14,6 @@
         body, html {
             margin: 0; padding: 0;
             width: 100vw; height: 100vh;
-            /* Using a fixed gradient first to avoid "Blue Screen" issues */
             background: linear-gradient(to bottom, var(--sky-top), var(--sky-bottom)) no-repeat;
             background-attachment: fixed;
             overflow: hidden;
@@ -24,19 +23,23 @@
         #garden { width: 100%; height: 100%; position: relative; z-index: 1; }
 
         #grass-container {
-            position: absolute; bottom: 0; left: 0; width: 100%; height: 60px;
-            display: flex; align-items: flex-end; pointer-events: none; z-index: 5;
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 5;
         }
 
         .blade {
-            width: 3px; background: #94a684; margin-right: 1px;
-            border-radius: 2px 2px 0 0; transition: height 2s ease-out;
-            animation: sway 3s ease-in-out infinite alternate;
+            position: absolute;
+            bottom: 0;
+            width: 2px;
+            background: #94a684;
+            border-radius: 2px 2px 0 0;
+            transition: height 2s ease-out;
+            animation: windSway 3s ease-in-out infinite alternate;
         }
 
-        @keyframes sway {
-            from { transform: rotate(-3deg); }
-            to { transform: rotate(3deg); }
+        @keyframes windSway {
+            from { transform: rotate(-2deg); }
+            to { transform: rotate(2deg); }
         }
 
         .seed-word {
@@ -49,17 +52,18 @@
         .plant {
             position: absolute; bottom: 0; transform-origin: bottom center;
             display: flex; flex-direction: column; align-items: center;
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            /* Subtler transition for the "shiver" effect */
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
             pointer-events: none; z-index: 2;
         }
 
         .sway-wrapper {
-            animation: sway 4s ease-in-out infinite alternate;
+            animation: windSway 4s ease-in-out infinite alternate;
             display: flex; flex-direction: column; align-items: center;
         }
 
         .stem { 
-            width: 4px; background: linear-gradient(to top, #3e4a34, var(--stem-color)); 
+            width: 3px; background: linear-gradient(to top, #3e4a34, var(--stem-color)); 
             border-radius: 4px; height: 0px; transition: height 0.6s ease-out; 
         }
 
@@ -69,7 +73,6 @@
         .label {
             margin-top: 8px; font-size: 10px; color: var(--text-color);
             background: rgba(255,255,255,0.9); padding: 2px 8px; border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
 
         .overlay {
@@ -97,7 +100,6 @@
         const plants = [];
         let audioCtx;
 
-        // Force an initial sky color immediately
         function updateSky() {
             const hour = new Date().getHours();
             let top, bottom;
@@ -118,20 +120,26 @@
             const gain = audioCtx.createGain();
             osc.type = 'sine'; osc.frequency.setValueAtTime(110, audioCtx.currentTime);
             gain.gain.setValueAtTime(0, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.03, audioCtx.currentTime + 2);
+            gain.gain.linearRampToValueAtTime(0.02, audioCtx.currentTime + 2);
             osc.connect(gain); gain.connect(audioCtx.destination);
             osc.start();
         }
 
+        // --- RANDOM GRASS SPAWNING ---
         function growGrass() {
-            for(let i=0; i<8; i++) {
+            for(let i=0; i<15; i++) {
                 const blade = document.createElement('div');
                 blade.className = 'blade';
+                // Randomly position across the entire width
+                blade.style.left = Math.random() * 100 + '%';
                 blade.style.height = '0px';
                 blade.style.animationDelay = Math.random() * -3 + 's';
+                // Randomly vary the green shade
+                blade.style.opacity = 0.5 + Math.random() * 0.5;
+                
                 grassContainer.appendChild(blade);
                 setTimeout(() => {
-                    blade.style.height = (Math.random() * 25 + 15) + 'px';
+                    blade.style.height = (Math.random() * 30 + 10) + 'px';
                 }, 100);
             }
         }
@@ -141,7 +149,6 @@
             const el = document.createElement('div');
             el.className = 'seed-word';
             el.innerText = word;
-            // Spawn inside the visible width
             el.style.left = (Math.random() * (window.innerWidth - 120) + 60) + 'px';
             el.style.top = '-60px';
             garden.appendChild(el);
@@ -150,27 +157,22 @@
             const float = setInterval(() => {
                 pos += 1.2;
                 el.style.top = pos + 'px';
-                if (pos > window.innerHeight) { 
-                    clearInterval(float); 
-                    el.remove(); 
-                }
+                if (pos > window.innerHeight) { clearInterval(float); el.remove(); }
             }, 20);
 
             el.addEventListener('click', (e) => {
                 e.stopPropagation();
                 startAudio();
                 createPlant(parseInt(el.style.left), el.innerText);
-                growGrass();
+                growGrass(); // Now spawns randomly along the bottom
                 el.remove();
             });
         }
-
-        // Start spawning immediately
-        setInterval(spawnWord, 3000);
+        setInterval(spawnWord, 3500);
 
         function createPlant(x, text) {
             const plantObj = {
-                x: x, height: 10, maxHeight: 200 + Math.random() * 300,
+                x: x, height: 10, maxHeight: 180 + Math.random() * 250,
                 element: document.createElement('div'),
                 canvas: document.createElement('canvas'),
                 stemElement: null
@@ -202,7 +204,6 @@
             const ctx = plantObj.canvas.getContext('2d');
             const color = colorMap[text] || "#fff";
             
-            // Draw Flower
             const petals = 8;
             ctx.translate(50, 50); ctx.fillStyle = color;
             for (let i = 0; i < petals; i++) {
@@ -219,8 +220,9 @@
             plants.push(plantObj);
         }
 
+        // --- SUBTLE PROXIMITY SWAY ---
         document.addEventListener('mousemove', (e) => {
-            const swayDistance = 120;
+            const detectRange = 70; // Only react when very close to the flower head
             plants.forEach(p => {
                 const flowerRect = p.canvas.getBoundingClientRect();
                 const flowerX = flowerRect.left + (flowerRect.width / 2);
@@ -229,8 +231,9 @@
                 const dy = e.clientY - flowerY;
                 const distance = Math.sqrt(dx*dx + dy*dy);
 
-                if (distance < swayDistance) {
-                    const power = (1 - (distance / swayDistance)) * 35; 
+                if (distance < detectRange) {
+                    // Lowered power for a very subtle "shiver" or lean
+                    const power = (1 - (distance / detectRange)) * 8; 
                     const direction = dx > 0 ? -power : power;
                     p.element.style.transform = `rotate(${direction}deg)`;
                 } else {
@@ -242,7 +245,7 @@
         setInterval(() => {
             plants.forEach(p => {
                 if (p.height < p.maxHeight) {
-                    p.height += 15;
+                    p.height += 12;
                     p.stemElement.style.height = p.height + 'px';
                 }
             });
