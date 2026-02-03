@@ -33,13 +33,16 @@
             border: 2px solid #a29bfe; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
 
+        /* NEW: UNIVERSE LAYER FOR FLYING PETALS */
+        #universe { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9500; }
+
         #label-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; }
 
         .flower-label {
             position: absolute; background: rgba(255,255,255,0.95); 
             padding: 4px 12px; border-radius: 10px; font-size: 11px; 
             transform: translateX(-50%); color: #4a5568; font-weight: bold;
-            transition: opacity 1s, transform 2s;
+            transition: opacity 1.5s;
         }
 
         #grass-container { position: absolute; bottom: 0; left: 0; width: 100%; height: 80px; z-index: 500; pointer-events: none; }
@@ -61,22 +64,10 @@
         }
 
         .petal {
-            position: absolute; top: 50%; left: 50%; width: 40px; height: 20px;
+            position: absolute; width: 40px; height: 20px;
             border-radius: 50% 50% 50% 50% / 100% 100% 0% 0%;
             transform-origin: center left; opacity: 0.8;
-            transition: transform 3s ease-in, opacity 3s;
-        }
-
-        /* GUST ANIMATION */
-        .gust-away {
-            transform: translateY(-100vh) rotate(360deg) scale(0) !important;
-            opacity: 0 !important;
-        }
-
-        .stem {
-            width: 3px; height: 0px; 
-            background: linear-gradient(to top, #1a2214, var(--stem-color));
-            transition: height 1.5s ease-out; border-radius: 2px;
+            transition: transform 4s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 3s;
         }
 
         .seed-word {
@@ -90,6 +81,7 @@
 
     <div id="audio-control" onclick="toggleAudio()">🔇</div>
     <div id="start-prompt" onclick="initGarden()">Begin Manifesting</div>
+    <div id="universe"></div>
     <div id="label-layer"></div>
     <div id="garden"></div>
     <div id="grass-container"></div>
@@ -97,6 +89,7 @@
     <script>
         const garden = document.getElementById('garden');
         const grass = document.getElementById('grass-container');
+        const universe = document.getElementById('universe');
         const labelLayer = document.getElementById('label-layer');
         const startPrompt = document.getElementById('start-prompt');
         const audioBtn = document.getElementById('audio-control');
@@ -110,18 +103,15 @@
             if (audioCtx) return;
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             masterGain = audioCtx.createGain();
-            masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
             masterGain.connect(audioCtx.destination);
-
-            // Ambient Hum
             humOsc = audioCtx.createOscillator();
             const humGain = audioCtx.createGain();
             humOsc.type = 'triangle';
-            humOsc.frequency.setValueAtTime(55, audioCtx.currentTime); // Low A
+            humOsc.frequency.setValueAtTime(55, audioCtx.currentTime);
             humGain.gain.setValueAtTime(0.02, audioCtx.currentTime);
-            humOsc.connect(humGain);
-            humGain.connect(masterGain);
+            humOsc.connect(humGain); humGain.connect(masterGain);
             humOsc.start();
+            masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
         }
 
         function toggleAudio() {
@@ -151,12 +141,20 @@
             spawnWord();
         }
 
+        // IMPROVED DISTRIBUTION: Split screen into 5 zones
+        let currentZone = 0;
         function spawnWord() {
             const el = document.createElement('div');
             el.className = 'seed-word';
             const keys = Object.keys(colorMap);
             el.innerText = keys[Math.floor(Math.random() * keys.length)];
-            el.style.left = (Math.random() * 75 + 10) + '%';
+            
+            // Cycle through zones 0-4
+            const zoneWidth = 16; 
+            const xPos = (currentZone * zoneWidth) + 10 + (Math.random() * zoneWidth);
+            currentZone = (currentZone + 1) % 5;
+
+            el.style.left = xPos + '%';
             el.style.top = '-60px';
             document.body.appendChild(el);
 
@@ -176,7 +174,6 @@
 
         function spawnFlower(x, text, color) {
             flowerCount++;
-            
             const plant = document.createElement('div');
             plant.className = 'plant';
             plant.style.left = x + 'px';
@@ -184,9 +181,11 @@
             const head = document.createElement('div');
             head.className = 'flower-head';
             head.style.backgroundColor = color;
+            
             for(let i=0; i<6; i++) {
                 const p = document.createElement('div');
                 p.className = 'petal';
+                p.style.left = '50%'; p.style.top = '50%';
                 p.style.transform = `rotate(${i * 60}deg) translate(5px, -50%)`;
                 p.style.backgroundColor = color;
                 head.appendChild(p);
@@ -209,35 +208,40 @@
                 head.style.transform = 'scale(1)';
             }, 50);
 
-            if (flowerCount >= 50) {
-                setTimeout(triggerGust, 2000);
-            }
+            if (flowerCount >= 50) setTimeout(triggerGust, 2000);
         }
 
         function triggerGust() {
             flowerCount = 0;
-            const petals = document.querySelectorAll('.petal');
-            const plants = document.querySelectorAll('.plant');
-            const labels = document.querySelectorAll('.flower-label');
-            const blades = document.querySelectorAll('.blade');
+            const allPetals = document.querySelectorAll('.petal');
+            
+            allPetals.forEach((p) => {
+                // 1. Calculate where the petal is right now
+                const rect = p.getBoundingClientRect();
+                
+                // 2. Move it to the universe layer so it survives the plant fade
+                universe.appendChild(p);
+                p.style.left = rect.left + 'px';
+                p.style.top = rect.top + 'px';
+                p.style.position = 'fixed';
 
-            petals.forEach((p, i) => {
+                // 3. Launch it!
                 setTimeout(() => {
-                    p.classList.add('gust-away');
+                    const driftX = (Math.random() - 0.5) * 400;
+                    p.style.transform = `translate(${driftX}px, -120vh) rotate(${Math.random() * 720}deg) scale(0.2)`;
+                    p.style.opacity = '0';
                 }, Math.random() * 1000);
             });
 
+            // Fade stems, grass, and labels
             setTimeout(() => {
-                plants.forEach(p => p.style.opacity = '0');
-                labels.forEach(l => l.style.opacity = '0');
-                blades.forEach(b => b.style.opacity = '0');
-            }, 1500);
+                document.querySelectorAll('.plant, .flower-label, .blade').forEach(el => el.style.opacity = '0');
+            }, 1000);
 
+            // Total cleanup
             setTimeout(() => {
-                garden.innerHTML = '';
-                labelLayer.innerHTML = '';
-                grass.innerHTML = '';
-            }, 4000);
+                garden.innerHTML = ''; labelLayer.innerHTML = ''; grass.innerHTML = ''; universe.innerHTML = '';
+            }, 5000);
         }
     </script>
 </body>
