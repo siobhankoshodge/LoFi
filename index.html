@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Sentient Manifestation Garden</title>
+    <title>Proximity Manifestation Garden</title>
     <style>
         :root {
-            --bg-color: #eef2f3;
+            --bg-color: #f7f9fa;
             --stem-color: #7d8f69;
             --text-color: #4a5568;
         }
@@ -22,20 +22,17 @@
 
         .seed-word {
             position: absolute;
-            padding: 12px 24px;
-            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 20px;
+            background: white;
             border: 1px solid #d1d9e0;
             border-radius: 30px;
             color: var(--text-color);
             cursor: pointer;
             font-size: 13px;
             font-weight: bold;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
             z-index: 100;
-            transition: transform 0.2s;
         }
-
-        .seed-word:hover { transform: scale(1.1) rotate(2deg); }
 
         .plant {
             position: absolute;
@@ -44,7 +41,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            transition: transform 0.4s ease-out; /* Smooth cursor reaction */
+            transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
 
         .stem { 
@@ -52,16 +49,15 @@
             background: linear-gradient(to top, #3e4a34, var(--stem-color)); 
             border-radius: 4px; 
             height: 0px; 
-            transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1); 
+            transition: height 0.6s ease-out; 
         }
 
-        .flower-canvas { transform: scale(0); transition: transform 2s ease-out; }
+        .flower-canvas { transform: scale(0); transition: transform 1.5s ease-out; }
         .flower-canvas.bloomed { transform: scale(1); }
 
         .label {
             margin-top: 8px; font-size: 10px; color: var(--text-color);
-            background: white; padding: 2px 8px; border-radius: 10px;
-            letter-spacing: 1px;
+            background: rgba(255,255,255,0.8); padding: 2px 8px; border-radius: 10px;
         }
 
         .overlay {
@@ -76,41 +72,53 @@
     <div class="overlay"></div>
     <div id="garden"></div>
 
-    <audio id="bgm" loop src="https://stream.zeno.fm/0r0xa792kwzuv"></audio>
-
     <script>
         const garden = document.getElementById('garden');
-        const audio = document.getElementById('bgm');
         
-        // Color Mapping: Same word = Same color
         const colorMap = {
-            "Growth": "#ffb7c5",    // Pink
-            "Peace": "#b2e2f2",     // Blue
-            "Abundance": "#f9e076", // Gold
-            "Healing": "#b4f8c8",   // Green
-            "Clarity": "#ffffff",   // White
-            "Love": "#ff6b6b",      // Red
-            "Focus": "#a29bfe"      // Purple
+            "Growth": "#ffb7c5",
+            "Peace": "#b2e2f2",
+            "Abundance": "#f9e076",
+            "Healing": "#b4f8c8",
+            "Clarity": "#ffffff",
+            "Love": "#ff6b6b",
+            "Focus": "#a29bfe"
         };
 
         const manifestationWords = Object.keys(colorMap);
         const plants = [];
-        let mouseX = 0;
+        let audioCtx;
 
-        // Initialize Audio on first click
-        document.body.addEventListener('click', () => {
-            if (audio.paused) {
-                audio.volume = 0.3;
-                audio.play().catch(e => console.log("Audio waiting for interaction..."));
-            }
-        }, { once: false });
+        // --- RELIABLE AUDIO: Built-in Synth ---
+        function startBreathingAudio() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(110, audioCtx.currentTime); // Low A drone
+            
+            gain.gain.setValueAtTime(0, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.05, audioCtx.currentTime + 2);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
 
-        // Track Mouse for Reaction
-        document.addEventListener('mousemove', (e) => {
-            mouseX = e.clientX;
-            updatePlantSway();
-        });
+            // LFO for "breathing" effect
+            const lfo = audioCtx.createOscillator();
+            const lfoGain = audioCtx.createGain();
+            lfo.frequency.value = 0.2; // Slow breathing
+            lfoGain.gain.value = 0.02;
+            lfo.connect(lfoGain);
+            lfoGain.connect(gain.gain);
+            lfo.start();
+        }
 
+        document.body.addEventListener('click', startBreathingAudio);
+
+        // --- SPAWNING LOGIC ---
         function spawnWord() {
             const word = manifestationWords[Math.floor(Math.random() * manifestationWords.length)];
             const el = document.createElement('div');
@@ -122,14 +130,13 @@
 
             let pos = -60;
             const float = setInterval(() => {
-                pos += 0.8;
+                pos += 0.7;
                 el.style.top = pos + 'px';
                 if (pos > window.innerHeight) { clearInterval(float); el.remove(); }
             }, 20);
 
             el.addEventListener('click', (e) => {
                 e.stopPropagation();
-                clearInterval(float);
                 createPlant(parseInt(el.style.left) + 60, el.innerText);
                 el.remove();
             });
@@ -141,7 +148,7 @@
             const plantObj = {
                 x: x,
                 height: 10,
-                maxHeight: 200 + Math.random() * 300,
+                maxHeight: 250 + Math.random() * 250,
                 element: document.createElement('div'),
                 stemElement: null
             };
@@ -166,8 +173,8 @@
             garden.appendChild(plantObj.element);
 
             drawFlower(canvas.getContext('2d'), colorMap[text]);
-            
             setTimeout(() => canvas.classList.add('bloomed'), 100);
+            
             plantObj.stemElement = stem;
             plants.push(plantObj);
         }
@@ -180,35 +187,41 @@
                 ctx.rotate((Math.PI * 2) / petals);
                 ctx.beginPath();
                 ctx.moveTo(0, 0);
-                ctx.bezierCurveTo(30, -30, 30, 30, 0, 0);
+                ctx.bezierCurveTo(25, -25, 25, 25, 0, 0);
                 ctx.fill();
             }
-            ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI * 2);
+            ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI * 2);
             ctx.fillStyle = 'rgba(0,0,0,0.1)'; ctx.fill();
         }
 
-        // SWAY & CURSOR REACTION ENGINE
-        function updatePlantSway() {
-            plants.forEach(p => {
-                const dist = mouseX - p.x;
-                const maxLeaning = 15; // Max degrees to lean
-                const lean = Math.max(-maxLeaning, Math.min(maxLeaning, dist / 20));
-                
-                // Add a natural idle sway + cursor lean
-                const idleSway = Math.sin(Date.now() / 1000) * 2;
-                p.element.style.transform = `rotate(${lean + idleSway}deg)`;
-            });
-        }
+        // --- PROXIMITY REACTION (1cm approx 38px) ---
+        document.addEventListener('mousemove', (e) => {
+            const proximityLimit = 50; // Roughly 1-2cm depending on screen density
 
-        // GROWTH ENGINE
+            plants.forEach(p => {
+                const rect = p.element.getBoundingClientRect();
+                const plantMidX = rect.left + rect.width / 2;
+                const plantMidY = rect.bottom - (p.height / 2);
+                
+                const dist = Math.sqrt(Math.pow(e.clientX - plantMidX, 2) + Math.pow(e.clientY - plantMidY, 2));
+
+                if (dist < proximityLimit) {
+                    const leanDirection = (e.clientX < plantMidX) ? 10 : -10;
+                    p.element.style.transform = `rotate(${leanDirection}deg) scale(1.05)`;
+                } else {
+                    p.element.style.transform = `rotate(0deg) scale(1)`;
+                }
+            });
+        });
+
+        // --- GROWTH ENGINE ---
         setInterval(() => {
             plants.forEach(p => {
                 if (p.height < p.maxHeight) {
-                    p.height += 8; // Brisk growth
+                    p.height += 10;
                     p.stemElement.style.height = p.height + 'px';
                 }
             });
-            updatePlantSway(); // Keep swaying even if mouse doesn't move
         }, 100);
 
     </script>
