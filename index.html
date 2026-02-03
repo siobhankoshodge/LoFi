@@ -2,13 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Floating Manifestation Garden</title>
+    <title>Sentient Manifestation Garden</title>
     <style>
         :root {
-            --bg-color: #f0f4f8; /* Soft sky blue/grey */
+            --bg-color: #eef2f3;
             --stem-color: #7d8f69;
-            --text-color: #5a6a82;
-            --accent: #d1e3f0;
+            --text-color: #4a5568;
         }
 
         body, html {
@@ -16,69 +15,60 @@
             width: 100vw; height: 100vh;
             background-color: var(--bg-color);
             overflow: hidden;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Courier New', Courier, monospace;
         }
 
         #garden { width: 100%; height: 100%; position: relative; }
 
-        /* Floating Seed Style */
         .seed-word {
             position: absolute;
-            padding: 10px 20px;
-            background: rgba(255, 255, 255, 0.8);
-            border: 1px solid var(--accent);
-            border-radius: 20px;
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #d1d9e0;
+            border-radius: 30px;
             color: var(--text-color);
             cursor: pointer;
-            font-size: 14px;
-            letter-spacing: 1px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            transition: transform 0.3s ease;
-            user-select: none;
+            font-size: 13px;
+            font-weight: bold;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
             z-index: 100;
+            transition: transform 0.2s;
         }
 
-        .seed-word:hover { transform: scale(1.1); background: #fff; }
-
-        /* The Lo-Fi Overlay */
-        .overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; background: url('https://grainy-gradients.vercel.app/noise.svg');
-            opacity: 0.1; z-index: 10;
-        }
-
-        @keyframes sway {
-            0%, 100% { transform: rotate(-2deg); }
-            50% { transform: rotate(2deg); }
-        }
+        .seed-word:hover { transform: scale(1.1) rotate(2deg); }
 
         .plant {
-            position: absolute; bottom: 0; transform-origin: bottom center;
-            display: flex; flex-direction: column; align-items: center;
-            animation: sway 4s ease-in-out infinite;
+            position: absolute;
+            bottom: 0;
+            transform-origin: bottom center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.4s ease-out; /* Smooth cursor reaction */
         }
 
         .stem { 
-            width: 3px; 
-            background: linear-gradient(to top, #4b5d3f, var(--stem-color)); 
-            border-radius: 2px; 
+            width: 4px; 
+            background: linear-gradient(to top, #3e4a34, var(--stem-color)); 
+            border-radius: 4px; 
             height: 0px; 
-            transition: height 0.3s ease-out; 
+            transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1); 
         }
 
-        .flower-canvas { transform: scale(0); transition: transform 2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .flower-canvas { transform: scale(0); transition: transform 2s ease-out; }
         .flower-canvas.bloomed { transform: scale(1); }
 
         .label {
-            margin-top: 5px; font-size: 11px; color: var(--text-color);
-            text-transform: uppercase; opacity: 0.7;
+            margin-top: 8px; font-size: 10px; color: var(--text-color);
+            background: white; padding: 2px 8px; border-radius: 10px;
+            letter-spacing: 1px;
         }
 
-        .controls {
-            position: absolute; bottom: 20px; right: 20px; z-index: 1000;
-            background: white; padding: 10px; border-radius: 50px; opacity: 0.5;
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; background: url('https://grainy-gradients.vercel.app/noise.svg');
+            opacity: 0.08; z-index: 10;
         }
-        .controls:hover { opacity: 1; }
     </style>
 </head>
 <body>
@@ -86,65 +76,72 @@
     <div class="overlay"></div>
     <div id="garden"></div>
 
-    <div class="controls">
-        <button onclick="toggleMusic()" style="border:none; background:none; cursor:pointer;">Mood: Deep Relax 🌿</button>
-    </div>
-
-    <audio id="bgm" loop src="https://assets.mixkit.co/music/preview/mixkit-spirit-of-the-forest-617.mp3"></audio>
+    <audio id="bgm" loop src="https://stream.zeno.fm/0r0xa792kwzuv"></audio>
 
     <script>
         const garden = document.getElementById('garden');
-        const colors = ['#f9dbbd', '#fca17d', '#da627d', '#9a348e', '#0d0630'];
-        const manifestationWords = ["Peace", "Abundance", "Growth", "Clarity", "Love", "Focus", "Energy", "Healing"];
+        const audio = document.getElementById('bgm');
+        
+        // Color Mapping: Same word = Same color
+        const colorMap = {
+            "Growth": "#ffb7c5",    // Pink
+            "Peace": "#b2e2f2",     // Blue
+            "Abundance": "#f9e076", // Gold
+            "Healing": "#b4f8c8",   // Green
+            "Clarity": "#ffffff",   // White
+            "Love": "#ff6b6b",      // Red
+            "Focus": "#a29bfe"      // Purple
+        };
+
+        const manifestationWords = Object.keys(colorMap);
         const plants = [];
+        let mouseX = 0;
 
-        function toggleMusic() {
-            const audio = document.getElementById('bgm');
-            audio.volume = 0.4;
-            return audio.paused ? audio.play() : audio.pause();
-        }
+        // Initialize Audio on first click
+        document.body.addEventListener('click', () => {
+            if (audio.paused) {
+                audio.volume = 0.3;
+                audio.play().catch(e => console.log("Audio waiting for interaction..."));
+            }
+        }, { once: false });
 
-        // CREATE FLOATING WORDS
+        // Track Mouse for Reaction
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            updatePlantSway();
+        });
+
         function spawnWord() {
             const word = manifestationWords[Math.floor(Math.random() * manifestationWords.length)];
             const el = document.createElement('div');
             el.className = 'seed-word';
             el.innerText = word;
-            
-            // Random start position
-            el.style.left = Math.random() * (window.innerWidth - 100) + 'px';
-            el.style.top = '-50px';
-            
+            el.style.left = Math.random() * (window.innerWidth - 150) + 'px';
+            el.style.top = '-60px';
             garden.appendChild(el);
 
-            // Animate Floating Down
-            let pos = -50;
-            const speed = 0.5 + Math.random() * 1;
-            const floatInterval = setInterval(() => {
-                pos += speed;
+            let pos = -60;
+            const float = setInterval(() => {
+                pos += 0.8;
                 el.style.top = pos + 'px';
-                
-                // Remove if it goes off screen
-                if (pos > window.innerHeight) {
-                    clearInterval(floatInterval);
-                    el.remove();
-                }
+                if (pos > window.innerHeight) { clearInterval(float); el.remove(); }
             }, 20);
 
-            el.addEventListener('click', () => {
-                clearInterval(floatInterval);
-                createPlant(parseInt(el.style.left), el.innerText);
+            el.addEventListener('click', (e) => {
+                e.stopPropagation();
+                clearInterval(float);
+                createPlant(parseInt(el.style.left) + 60, el.innerText);
                 el.remove();
             });
         }
 
-        // Spawn a new word every 3 seconds
-        setInterval(spawnWord, 3000);
+        setInterval(spawnWord, 4000);
 
         function createPlant(x, text) {
             const plantObj = {
+                x: x,
                 height: 10,
-                maxHeight: 250 + Math.random() * 350,
+                maxHeight: 200 + Math.random() * 300,
                 element: document.createElement('div'),
                 stemElement: null
             };
@@ -168,39 +165,51 @@
             plantObj.element.appendChild(label);
             garden.appendChild(plantObj.element);
 
-            drawFlower(canvas.getContext('2d'), colors[Math.floor(Math.random() * colors.length)]);
+            drawFlower(canvas.getContext('2d'), colorMap[text]);
             
             setTimeout(() => canvas.classList.add('bloomed'), 100);
-            
             plantObj.stemElement = stem;
             plants.push(plantObj);
         }
 
         function drawFlower(ctx, color) {
-            const petals = 6 + Math.floor(Math.random() * 4);
-            const radius = 25;
+            const petals = 8;
             ctx.translate(50, 50);
             ctx.fillStyle = color;
             for (let i = 0; i < petals; i++) {
                 ctx.rotate((Math.PI * 2) / petals);
                 ctx.beginPath();
                 ctx.moveTo(0, 0);
-                ctx.bezierCurveTo(radius, -radius, radius, radius, 0, 0);
+                ctx.bezierCurveTo(30, -30, 30, 30, 0, 0);
                 ctx.fill();
             }
-            ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI * 2);
-            ctx.fillStyle = '#fff'; ctx.fill();
+            ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(0,0,0,0.1)'; ctx.fill();
         }
 
-        // FAST GROWTH ENGINE
+        // SWAY & CURSOR REACTION ENGINE
+        function updatePlantSway() {
+            plants.forEach(p => {
+                const dist = mouseX - p.x;
+                const maxLeaning = 15; // Max degrees to lean
+                const lean = Math.max(-maxLeaning, Math.min(maxLeaning, dist / 20));
+                
+                // Add a natural idle sway + cursor lean
+                const idleSway = Math.sin(Date.now() / 1000) * 2;
+                p.element.style.transform = `rotate(${lean + idleSway}deg)`;
+            });
+        }
+
+        // GROWTH ENGINE
         setInterval(() => {
             plants.forEach(p => {
                 if (p.height < p.maxHeight) {
-                    p.height += 5; // Faster growth increment
+                    p.height += 8; // Brisk growth
                     p.stemElement.style.height = p.height + 'px';
                 }
             });
-        }, 1000); // Check every second
+            updatePlantSway(); // Keep swaying even if mouse doesn't move
+        }, 100);
 
     </script>
 </body>
