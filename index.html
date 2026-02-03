@@ -5,105 +5,137 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Manifestation Meadow</title>
     <style>
-        body, html {
-            margin: 0; padding: 0;
-            width: 100%; height: 100%;
-            background: #87ceeb; /* Solid blue fallback */
-            overflow: hidden;
-            font-family: sans-serif;
+        :root {
+            --sky-top: #87ceeb;
+            --sky-bottom: #e0f6ff;
+            --stem-color: #7d8f69;
         }
 
-        /* THE START BUTTON - If you don't see this, the code isn't updating */
-        #start-prompt {
-            position: fixed; 
-            top: 50%; left: 50%; 
-            transform: translate(-50%, -50%);
-            padding: 25px 50px; 
-            background: #ffffff; 
-            color: #4a5568;
-            font-size: 20px;
-            font-weight: bold;
-            border: 4px solid #a29bfe;
-            border-radius: 50px;
-            cursor: pointer;
-            z-index: 10000; /* Over everything */
-            display: block;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, var(--sky-top), var(--sky-bottom)) no-repeat fixed;
+            overflow: hidden; font-family: sans-serif;
+            touch-action: none; /* Crucial for mobile */
         }
+
+        #garden { position: absolute; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
 
         .seed-word {
-            position: absolute; 
-            padding: 15px 30px;
-            background: white; 
-            border-radius: 30px;
-            color: #4a5568; 
-            font-weight: bold;
-            z-index: 9000;
-            white-space: nowrap;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            position: absolute; padding: 12px 24px;
+            background: white; border: 2px solid #a29bfe; border-radius: 30px;
+            color: #4a5568; font-weight: bold; font-size: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            z-index: 9999; pointer-events: auto; /* Makes them clickable */
+            cursor: pointer; user-select: none;
         }
 
-        #grass-container {
-            position: absolute; bottom: 20px; left: 0;
-            width: 100%; height: 100px;
-            z-index: 100; pointer-events: none;
+        .plant {
+            position: absolute; bottom: 20px; width: 100px;
+            display: flex; flex-direction: column; align-items: center;
+            z-index: 20;
         }
 
-        .blade {
-            position: absolute; bottom: 0; width: 4px;
-            background: #7d8f69; border-radius: 4px;
+        .flower-head {
+            width: 50px; height: 50px; border-radius: 50%;
+            margin-bottom: -10px; z-index: 22;
+            transform: scale(0); transition: transform 0.8s ease-out;
+            border: 3px solid white;
         }
+
+        .stem {
+            width: 4px; height: 0px; 
+            background: var(--stem-color);
+            transition: height 1s ease-out; z-index: 21;
+        }
+
+        .label {
+            background: white; padding: 4px 10px; border-radius: 8px;
+            font-size: 11px; margin-top: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        #grass-container { position: absolute; bottom: 0; left: 0; width: 100%; height: 50px; z-index: 5; }
+        .blade { position: absolute; bottom: 0; width: 3px; background: #94a684; border-radius: 3px; }
     </style>
 </head>
 <body>
 
-    <button id="start-prompt" onclick="initGarden()">TAP TO START</button>
+    <div id="garden"></div>
     <div id="grass-container"></div>
 
     <script>
-        function initGarden() {
-            document.getElementById('start-prompt').style.display = 'none';
-            alert("Garden Started!"); // Temporary alert to confirm the click works
-            spawnWord();
-            setInterval(spawnWord, 3000);
-        }
+        const garden = document.getElementById('garden');
+        const grass = document.getElementById('grass-container');
+        const words = ["Peace", "Love", "Abundance", "Growth", "Focus"];
+        const colors = ["#ffb7c5", "#ff6b6b", "#f9e076", "#b4f8c8", "#a29bfe"];
 
-        function spawnWord() {
-            const words = ["Growth", "Peace", "Abundance", "Healing", "Love"];
-            const word = words[Math.floor(Math.random() * words.length)];
+        function createWord() {
             const el = document.createElement('div');
             el.className = 'seed-word';
-            el.innerText = word;
-            el.style.left = Math.random() * 70 + 10 + '%';
+            const index = Math.floor(Math.random() * words.length);
+            el.innerText = words[index];
+            el.dataset.color = colors[index];
+            
+            el.style.left = (Math.random() * 70 + 15) + '%';
             el.style.top = '-50px';
             document.body.appendChild(el);
 
-            let pos = -50;
-            const float = setInterval(() => {
-                pos += 2;
-                el.style.top = pos + 'px';
-                if (pos > window.innerHeight) {
-                    clearInterval(float);
-                    el.remove();
-                }
+            let top = -50;
+            const fall = setInterval(() => {
+                top += 1.5;
+                el.style.top = top + 'px';
+                if (top > window.innerHeight) { clearInterval(fall); el.remove(); }
             }, 20);
 
-            el.onclick = () => {
-                growGrass();
+            // Use pointerdown to cover both Mouse and Touch
+            el.onpointerdown = (e) => {
+                e.preventDefault();
+                spawnFlower(e.clientX, el.innerText, el.dataset.color);
+                clearInterval(fall);
                 el.remove();
             };
         }
 
-        function growGrass() {
-            const container = document.getElementById('grass-container');
-            for(let i=0; i<5; i++) {
-                const blade = document.createElement('div');
-                blade.className = 'blade';
-                blade.style.left = Math.random() * 100 + '%';
-                blade.style.height = (Math.random() * 40 + 20) + 'px';
-                container.appendChild(blade);
-            }
+        function spawnFlower(x, text, color) {
+            const plant = document.createElement('div');
+            plant.className = 'plant';
+            plant.style.left = (x - 50) + 'px';
+
+            const head = document.createElement('div');
+            head.className = 'flower-head';
+            head.style.backgroundColor = color;
+
+            const stem = document.createElement('div');
+            stem.className = 'stem';
+
+            const label = document.createElement('div');
+            label.className = 'label';
+            label.innerText = text;
+
+            plant.appendChild(head);
+            plant.appendChild(stem);
+            plant.appendChild(label);
+            garden.appendChild(plant);
+
+            // Trigger animations
+            setTimeout(() => {
+                const height = 100 + Math.random() * 200;
+                stem.style.height = height + 'px';
+                head.style.transform = 'scale(1)';
+                
+                // Add grass bits
+                for(let i=0; i<5; i++) {
+                    const b = document.createElement('div');
+                    b.className = 'blade';
+                    b.style.left = (Math.random() * 100) + '%';
+                    b.style.height = (Math.random() * 30 + 10) + 'px';
+                    grass.appendChild(b);
+                }
+            }, 50);
         }
+
+        // Start spawning immediately
+        setInterval(createWord, 3000);
+        createWord();
     </script>
 </body>
 </html>
