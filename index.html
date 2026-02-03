@@ -8,11 +8,11 @@
         :root {
             --sky-top: #87ceeb;
             --sky-bottom: #e0f6ff;
-            --stem-color: #6d7f59;
+            --stem-color: #4a5c37;
         }
 
         body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%;
+            margin: 0; padding: 0; width: 100%; height: 100%; height: -webkit-fill-available;
             background: linear-gradient(to bottom, var(--sky-top), var(--sky-bottom)) no-repeat fixed;
             overflow: hidden; font-family: 'Courier New', Courier, monospace;
             touch-action: manipulation;
@@ -28,55 +28,62 @@
 
         #garden { position: absolute; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
 
-        /* THE PLANT SWAY ANIMATION */
         @keyframes windSway {
-            0% { transform: rotate(-1deg); }
-            100% { transform: rotate(1deg); }
+            from { transform: rotate(-1.5deg); }
+            to { transform: rotate(1.5deg); }
         }
 
         .plant {
-            position: absolute; bottom: 40px; width: 100px;
+            position: absolute; 
+            bottom: 30px; /* Anchored deep in the grass zone */
+            width: 100px;
             display: flex; flex-direction: column; align-items: center;
             transform-origin: bottom center;
             animation: windSway 3s ease-in-out infinite alternate;
             z-index: 20;
         }
 
-        /* ORGANIC FLOWER HEAD */
         .flower-head {
-            width: 15px; height: 15px;
-            background: #fff8e1; /* Center core */
-            border-radius: 50%;
-            position: relative;
-            z-index: 22;
-            transform: scale(0);
+            width: 15px; height: 15px; background: #fff8e1; border-radius: 50%;
+            position: relative; z-index: 22; transform: scale(0);
             transition: transform 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        /* Petal Layering */
         .petal {
             position: absolute; top: 50%; left: 50%;
-            width: 35px; height: 18px;
-            background: inherit;
-            border-radius: 50% 50% 50% 50% / 100% 100% 0% 0%; /* Leafy shape */
+            width: 38px; height: 20px;
+            border-radius: 50% 50% 50% 50% / 100% 100% 0% 0%;
             transform-origin: center left;
-            opacity: 0.9;
-            border: 1px solid rgba(255,255,255,0.3);
+            opacity: 0.85;
+            border: 1px solid rgba(255,255,255,0.2);
         }
 
         .stem {
             width: 3px; height: 0px; 
-            background: linear-gradient(to top, #3e4a34, var(--stem-color));
-            transition: height 1.5s ease-out; 
-            z-index: 21;
-            border-radius: 2px;
-            margin-top: -5px; /* Pull petals tight to stem */
+            background: linear-gradient(to top, #2d3822, var(--stem-color));
+            transition: height 1.5s ease-out; z-index: 21;
+            border-radius: 2px; margin-top: -5px;
         }
 
         .label {
-            background: rgba(255,255,255,0.85); padding: 4px 10px; border-radius: 8px;
-            font-size: 10px; margin-top: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            white-space: nowrap;
+            background: rgba(255,255,255,0.9); padding: 4px 10px; border-radius: 8px;
+            font-size: 10px; margin-top: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            white-space: nowrap; z-index: 30;
+        }
+
+        /* FIXED GRASS: Taller and sits in front of the stems */
+        #grass-container { 
+            position: absolute; bottom: 0; left: 0; width: 100%; 
+            height: 80px; /* Taller to cover the base of the stems */
+            z-index: 25; /* Higher than plants so stems look 'inside' */
+            pointer-events: none; 
+        }
+
+        .blade { 
+            position: absolute; bottom: 0; width: 3px; 
+            background: linear-gradient(to top, #3e4a34, #849671); 
+            border-radius: 4px 4px 0 0; 
+            transition: height 2s; 
         }
 
         .seed-word {
@@ -85,9 +92,6 @@
             color: #4a5568; font-weight: bold; cursor: pointer;
             z-index: 9000; pointer-events: auto;
         }
-
-        #grass-container { position: absolute; bottom: 0; left: 0; width: 100%; height: 60px; z-index: 5; pointer-events: none; }
-        .blade { position: absolute; bottom: 0; width: 2px; background: #849671; border-radius: 2px; transition: height 2s; }
     </style>
 </head>
 <body>
@@ -141,7 +145,6 @@
             const plant = document.createElement('div');
             plant.className = 'plant';
             plant.style.left = (x - 50) + 'px';
-            // Randomize sway speed so they don't move in perfect sync
             plant.style.animationDuration = (3 + Math.random() * 2) + 's';
             plant.style.animationDelay = (Math.random() * -5) + 's';
 
@@ -149,7 +152,6 @@
             head.className = 'flower-head';
             head.style.backgroundColor = color;
             
-            // Create 6 organic petals
             for(let i=0; i<6; i++) {
                 const p = document.createElement('div');
                 p.className = 'petal';
@@ -171,18 +173,18 @@
             garden.appendChild(plant);
 
             setTimeout(() => {
-                const h = 100 + Math.random() * 250;
+                const h = 100 + Math.random() * 200;
                 stem.style.height = h + 'px';
                 head.style.transform = 'scale(1)';
                 
-                // Spawn a few blades of grass
-                for(let i=0; i<5; i++) {
+                // Spawn thicker grass blades around the base
+                for(let i=0; i<8; i++) {
                     const b = document.createElement('div');
                     b.className = 'blade';
-                    b.style.left = (Math.random() * 100) + '%';
+                    b.style.left = (x / window.innerWidth * 100 + (Math.random() * 10 - 5)) + '%';
                     b.style.height = '0px';
                     grass.appendChild(b);
-                    setTimeout(() => b.style.height = (Math.random() * 25 + 10) + 'px', 50);
+                    setTimeout(() => b.style.height = (Math.random() * 40 + 20) + 'px', 50);
                 }
             }, 50);
         }
