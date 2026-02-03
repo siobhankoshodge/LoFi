@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manifestation Meadow</title>
+    <title>Manifestation Meadow - Fixed</title>
     <style>
         :root {
             --sky-top: #87ceeb;
@@ -19,13 +19,12 @@
             background-attachment: fixed;
             overflow: hidden;
             font-family: 'Courier New', Courier, monospace;
-            z-index: -2;
         }
 
-        /* Interaction layer to force spawn words if the interval lags */
+        /* This layer captures clicks to spawn words manually */
         #interaction-layer {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 0; cursor: crosshair;
+            z-index: 1; cursor: crosshair;
         }
 
         #garden { position: relative; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
@@ -34,8 +33,8 @@
             position: absolute; padding: 12px 24px;
             background: #ffffff; border: 2px solid #a29bfe; border-radius: 30px;
             color: var(--text-color); cursor: pointer; font-size: 15px; font-weight: bold;
-            box-shadow: 0 4px 15px rgba(162, 155, 254, 0.3); 
-            z-index: 999; 
+            box-shadow: 0 4px 15px rgba(162, 155, 254, 0.4); 
+            z-index: 9999; /* Set to be above EVERYTHING */
             pointer-events: auto;
             white-space: nowrap;
             user-select: none;
@@ -59,7 +58,7 @@
         }
 
         .flower-canvas { 
-            margin-bottom: -55px; /* Fuses the head to the stem */
+            margin-bottom: -55px; /* Fuses head to stem core */
             z-index: 22; 
             transform: scale(0); 
             transition: transform 1.2s ease-out; 
@@ -81,31 +80,18 @@
             border-radius: 12px;
             font-size: 11px; 
             box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
-            z-index: 25; /* Always in front */
+            z-index: 30; /* Front and center */
             border: 1px solid rgba(0,0,0,0.05);
             margin-top: 5px;
             white-space: nowrap;
         }
 
         #grass-container { position: absolute; bottom: 0; left: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; }
-        
-        .blade { 
-            position: absolute; bottom: 0; width: 2px; 
-            background: #94a684; border-radius: 2px 2px 0 0; 
-            transition: height 2s ease-out;
-            opacity: 0.8;
-        }
-
-        .overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; background: url('https://grainy-gradients.vercel.app/noise.svg');
-            opacity: 0.08; z-index: 1000;
-        }
+        .blade { position: absolute; bottom: 0; width: 2px; background: #94a684; border-radius: 2px 2px 0 0; }
     </style>
 </head>
 <body>
 
-    <div class="overlay"></div>
     <div id="interaction-layer"></div>
     <div id="garden">
         <div id="grass-container"></div>
@@ -124,19 +110,6 @@
         const plants = [];
         let audioCtx;
 
-        // Dynamic sky colors based on time
-        function updateSky() {
-            const hour = new Date().getHours();
-            let top, bottom;
-            if (hour >= 5 && hour < 8) { top = "#ff9a9e"; bottom = "#fad0c4"; } 
-            else if (hour >= 8 && hour < 17) { top = "#87ceeb"; bottom = "#e0f6ff"; } 
-            else if (hour >= 17 && hour < 20) { top = "#445069"; bottom = "#e29587"; } 
-            else { top = "#0b1120"; bottom = "#2c3e50"; } 
-            document.documentElement.style.setProperty('--sky-top', top);
-            document.documentElement.style.setProperty('--sky-bottom', bottom);
-        }
-        updateSky();
-
         function startAudio() {
             if (audioCtx) return;
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -154,5 +127,120 @@
             const el = document.createElement('div');
             el.className = 'seed-word';
             el.innerText = word;
+            // Ensure they spawn within visible area
             el.style.left = (15 + Math.random() * 70) + '%';
             el.style.top = '-60px';
+            document.body.appendChild(el);
+
+            let pos = -60;
+            const float = setInterval(() => {
+                pos += 1.2;
+                el.style.top = pos + 'px';
+                if (pos > window.innerHeight) { clearInterval(float); el.remove(); }
+            }, 16);
+
+            el.onclick = (e) => {
+                e.stopPropagation();
+                startAudio();
+                const rect = el.getBoundingClientRect();
+                createPlant(rect.left + rect.width / 2, el.innerText);
+                growGrass();
+                clearInterval(float);
+                el.remove();
+            };
+        }
+
+        function growGrass() {
+            for(let i=0; i<10; i++) {
+                const blade = document.createElement('div');
+                blade.className = 'blade';
+                blade.style.left = Math.random() * 100 + '%';
+                blade.style.height = (Math.random() * 30 + 10) + 'px';
+                grassContainer.appendChild(blade);
+            }
+        }
+
+        function createPlant(x, text) {
+            const plantObj = { height: 10, maxHeight: 150 + Math.random() * 300, element: document.createElement('div'), canvas: document.createElement('canvas'), stemElement: null };
+            plantObj.element.className = 'plant';
+            plantObj.element.style.left = (x - 60) + 'px';
+            
+            const wrapper = document.createElement('div');
+            wrapper.className = 'sway-wrapper';
+
+            plantObj.canvas.width = plantObj.canvas.height = 120;
+            plantObj.canvas.className = 'flower-canvas';
+            
+            const stem = document.createElement('div');
+            stem.className = 'stem';
+            
+            const label = document.createElement('div');
+            label.className = 'label';
+            label.innerText = text;
+
+            wrapper.appendChild(plantObj.canvas);
+            wrapper.appendChild(stem);
+            wrapper.appendChild(label);
+            plantObj.element.appendChild(wrapper);
+            garden.appendChild(plantObj.element);
+
+            const ctx = plantObj.canvas.getContext('2d');
+            const color = colorMap[text] || "#fff";
+            ctx.translate(60, 60);
+            
+            // Petals
+            ctx.fillStyle = color;
+            for (let i = 0; i < 8; i++) {
+                ctx.rotate((Math.PI * 2) / 8);
+                ctx.beginPath(); ctx.moveTo(0, 0);
+                ctx.bezierCurveTo(28, -28, 28, 28, 0, 0); ctx.fill();
+            }
+
+            // Central Core (Pistil) - This was missing in your screenshot
+            ctx.beginPath();
+            ctx.arc(0, 0, 8, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.fill();
+
+            setTimeout(() => plantObj.canvas.classList.add('bloomed'), 100);
+            plantObj.stemElement = stem;
+            plants.push(plantObj);
+        }
+
+        // Auto-spawn loop
+        setInterval(() => {
+            if(document.querySelectorAll('.seed-word').length < 3) spawnWord();
+        }, 3000);
+        
+        // Manual trigger: Click sky to spawn a word
+        interactionLayer.onclick = () => { startAudio(); spawnWord(); };
+
+        // Subtle Mouse Interaction
+        document.addEventListener('mousemove', (e) => {
+            plants.forEach(p => {
+                const rect = p.canvas.getBoundingClientRect();
+                const dx = e.clientX - (rect.left + 60);
+                const dy = e.clientY - (rect.top + 60);
+                const dist = Math.sqrt(dx*dx + dy*dy);
+
+                if (dist < 80) {
+                    const power = (1 - (dist / 80)) * 6; 
+                    p.element.style.transform = `rotate(${dx > 0 ? -power : power}deg)`;
+                } else {
+                    p.element.style.transform = `rotate(0deg)`;
+                }
+            });
+        });
+
+        // Growth loop
+        setInterval(() => {
+            plants.forEach(p => {
+                if (p.height < p.maxHeight) {
+                    p.height += 12;
+                    p.stemElement.style.height = p.height + 'px';
+                }
+            });
+        }, 100);
+    </script>
+</body>
+</html>
