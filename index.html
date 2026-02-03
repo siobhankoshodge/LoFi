@@ -12,84 +12,131 @@
         }
 
         body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%;
+            margin: 0; padding: 0; width: 100%; height: 100%; height: -webkit-fill-available;
             background: linear-gradient(to bottom, var(--sky-top), var(--sky-bottom)) no-repeat fixed;
-            overflow: hidden; font-family: sans-serif;
-            touch-action: none; /* Crucial for mobile */
+            overflow: hidden; font-family: 'Courier New', Courier, monospace;
+            touch-action: manipulation;
+        }
+
+        #start-prompt {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            padding: 20px 40px; background: white; border-radius: 50px;
+            font-weight: bold; color: #4a5568; cursor: pointer;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); z-index: 10000;
+            border: 2px solid #a29bfe;
         }
 
         #garden { position: absolute; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
+
+        /* THE FLOWER FIX: Petal shapes using CSS */
+        .flower-head {
+            width: 12px; height: 12px;
+            background: #fff; /* The center of the flower */
+            border-radius: 50%;
+            position: relative;
+            z-index: 22;
+            transform: scale(0);
+            transition: transform 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* Using pseudo-elements to create 8 petals */
+        .flower-head::before, .flower-head::after {
+            content: ''; position: absolute; top: 50%; left: 50%;
+            width: 40px; height: 15px;
+            background: inherit; /* Petal color */
+            border-radius: 20px;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 0 2px rgba(255,255,255,0.3);
+        }
+        .flower-head::before { transform: translate(-50%, -50%) rotate(45deg); }
+        .flower-head::after { transform: translate(-50%, -50%) rotate(-45deg); }
+
+        .petal-cross {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        }
+        .petal-cross::before, .petal-cross::after {
+            content: ''; position: absolute; top: 50%; left: 50%;
+            width: 40px; height: 15px;
+            background: inherit; border-radius: 20px;
+            transform: translate(-50%, -50%);
+        }
+        .petal-cross::before { transform: translate(-50%, -50%) rotate(90deg); }
+        .petal-cross::after { transform: translate(-50%, -50%) rotate(0deg); }
 
         .seed-word {
             position: absolute; padding: 12px 24px;
             background: white; border: 2px solid #a29bfe; border-radius: 30px;
             color: #4a5568; font-weight: bold; font-size: 16px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            z-index: 9999; pointer-events: auto; /* Makes them clickable */
-            cursor: pointer; user-select: none;
+            z-index: 9000; pointer-events: auto; cursor: pointer;
         }
 
         .plant {
-            position: absolute; bottom: 20px; width: 100px;
+            position: absolute; bottom: 30px; width: 100px;
             display: flex; flex-direction: column; align-items: center;
             z-index: 20;
         }
 
-        .flower-head {
-            width: 50px; height: 50px; border-radius: 50%;
-            margin-bottom: -10px; z-index: 22;
-            transform: scale(0); transition: transform 0.8s ease-out;
-            border: 3px solid white;
-        }
-
         .stem {
             width: 4px; height: 0px; 
-            background: var(--stem-color);
+            background: linear-gradient(to top, #3e4a34, var(--stem-color));
             transition: height 1s ease-out; z-index: 21;
+            border-radius: 2px;
         }
 
         .label {
-            background: white; padding: 4px 10px; border-radius: 8px;
-            font-size: 11px; margin-top: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            background: rgba(255,255,255,0.9); padding: 4px 10px; border-radius: 8px;
+            font-size: 11px; margin-top: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.05);
         }
 
-        #grass-container { position: absolute; bottom: 0; left: 0; width: 100%; height: 50px; z-index: 5; }
-        .blade { position: absolute; bottom: 0; width: 3px; background: #94a684; border-radius: 3px; }
+        #grass-container { position: absolute; bottom: 0; left: 0; width: 100%; height: 60px; z-index: 5; pointer-events: none; display: flex; align-items: flex-end; }
+        .blade { position: absolute; bottom: 0; width: 3px; background: #94a684; border-radius: 3px; transition: height 2s; }
     </style>
 </head>
 <body>
 
+    <div id="start-prompt" onclick="initGarden()">Begin Manifesting</div>
     <div id="garden"></div>
     <div id="grass-container"></div>
 
     <script>
         const garden = document.getElementById('garden');
         const grass = document.getElementById('grass-container');
-        const words = ["Peace", "Love", "Abundance", "Growth", "Focus"];
-        const colors = ["#ffb7c5", "#ff6b6b", "#f9e076", "#b4f8c8", "#a29bfe"];
+        const startPrompt = document.getElementById('start-prompt');
+        
+        const colorMap = {
+            "Peace": "#b2e2f2", "Love": "#ffb7c5", "Abundance": "#f9e076",
+            "Growth": "#b4f8c8", "Focus": "#a29bfe", "Healing": "#ff6b6b"
+        };
+        const words = Object.keys(colorMap);
 
-        function createWord() {
+        function initGarden() {
+            startPrompt.style.display = 'none';
+            spawnWord();
+            setInterval(spawnWord, 3500);
+        }
+
+        function spawnWord() {
             const el = document.createElement('div');
             el.className = 'seed-word';
-            const index = Math.floor(Math.random() * words.length);
-            el.innerText = words[index];
-            el.dataset.color = colors[index];
+            const word = words[Math.floor(Math.random() * words.length)];
+            el.innerText = word;
             
             el.style.left = (Math.random() * 70 + 15) + '%';
-            el.style.top = '-50px';
+            el.style.top = '-60px';
             document.body.appendChild(el);
 
-            let top = -50;
+            let top = -60;
             const fall = setInterval(() => {
-                top += 1.5;
+                top += 1.3;
                 el.style.top = top + 'px';
                 if (top > window.innerHeight) { clearInterval(fall); el.remove(); }
             }, 20);
 
-            // Use pointerdown to cover both Mouse and Touch
             el.onpointerdown = (e) => {
-                e.preventDefault();
-                spawnFlower(e.clientX, el.innerText, el.dataset.color);
+                const rect = el.getBoundingClientRect();
+                spawnFlower(rect.left + rect.width / 2, el.innerText, colorMap[el.innerText]);
                 clearInterval(fall);
                 el.remove();
             };
@@ -103,6 +150,10 @@
             const head = document.createElement('div');
             head.className = 'flower-head';
             head.style.backgroundColor = color;
+            
+            const cross = document.createElement('div');
+            cross.className = 'petal-cross';
+            head.appendChild(cross);
 
             const stem = document.createElement('div');
             stem.className = 'stem';
@@ -116,26 +167,21 @@
             plant.appendChild(label);
             garden.appendChild(plant);
 
-            // Trigger animations
             setTimeout(() => {
-                const height = 100 + Math.random() * 200;
-                stem.style.height = height + 'px';
+                const h = 120 + Math.random() * 200;
+                stem.style.height = h + 'px';
                 head.style.transform = 'scale(1)';
                 
-                // Add grass bits
-                for(let i=0; i<5; i++) {
+                for(let i=0; i<6; i++) {
                     const b = document.createElement('div');
                     b.className = 'blade';
                     b.style.left = (Math.random() * 100) + '%';
-                    b.style.height = (Math.random() * 30 + 10) + 'px';
+                    b.style.height = '0px';
                     grass.appendChild(b);
+                    setTimeout(() => b.style.height = (Math.random() * 30 + 15) + 'px', 50);
                 }
             }, 50);
         }
-
-        // Start spawning immediately
-        setInterval(createWord, 3000);
-        createWord();
     </script>
 </body>
 </html>
