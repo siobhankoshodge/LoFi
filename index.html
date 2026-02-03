@@ -2,10 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Reactive Manifestation Garden</title>
+    <title>Living Manifestation Garden</title>
     <style>
         :root {
-            --bg-color: #f7f9fa;
+            /* Sky colors will be set via JS */
+            --sky-top: #87ceeb;
+            --sky-bottom: #e0f6ff;
             --stem-color: #7d8f69;
             --text-color: #4a5568;
         }
@@ -13,45 +15,61 @@
         body, html {
             margin: 0; padding: 0;
             width: 100vw; height: 100vh;
-            background-color: var(--bg-color);
+            background: linear-gradient(to bottom, var(--sky-top), var(--sky-bottom));
             overflow: hidden;
+            transition: background 5s ease;
             font-family: 'Courier New', Courier, monospace;
         }
 
         #garden { width: 100%; height: 100%; position: relative; }
 
+        /* The Grass Logic */
+        #grass-container {
+            position: absolute;
+            bottom: 0; left: 0; width: 100%; height: 40px;
+            display: flex; align-items: flex-end;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .blade {
+            width: 2px;
+            background: #94a684;
+            margin-right: 1px;
+            border-radius: 2px 2px 0 0;
+            transition: height 2s ease-out;
+            animation: sway 3s ease-in-out infinite alternate;
+        }
+
         .seed-word {
             position: absolute;
             padding: 10px 20px;
-            background: white;
-            border: 1px solid #d1d9e0;
-            border-radius: 30px;
-            color: var(--text-color);
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: bold;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            z-index: 100;
+            background: white; border: 1px solid #d1d9e0; border-radius: 30px;
+            color: var(--text-color); cursor: pointer; font-size: 13px; font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05); z-index: 100;
+        }
+
+        @keyframes sway {
+            from { transform: rotate(-3deg); }
+            to { transform: rotate(3deg); }
         }
 
         .plant {
-            position: absolute;
-            bottom: 0;
-            transform-origin: bottom center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            /* Smooth spring-like transition */
+            position: absolute; bottom: 0; transform-origin: bottom center;
+            display: flex; flex-direction: column; align-items: center;
             transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             pointer-events: none;
         }
 
+        /* Combined Constant Sway + Reaction */
+        .sway-wrapper {
+            animation: sway 4s ease-in-out infinite alternate;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
         .stem { 
-            width: 4px; 
-            background: linear-gradient(to top, #3e4a34, var(--stem-color)); 
-            border-radius: 4px; 
-            height: 0px; 
-            transition: height 0.6s ease-out; 
+            width: 4px; background: linear-gradient(to top, #3e4a34, var(--stem-color)); 
+            border-radius: 4px; height: 0px; transition: height 0.6s ease-out; 
         }
 
         .flower-canvas { transform: scale(0); transition: transform 1.5s ease-out; }
@@ -72,10 +90,13 @@
 <body>
 
     <div class="overlay"></div>
-    <div id="garden"></div>
+    <div id="garden">
+        <div id="grass-container"></div>
+    </div>
 
     <script>
         const garden = document.getElementById('garden');
+        const grassContainer = document.getElementById('grass-container');
         const colorMap = {
             "Growth": "#ffb7c5", "Peace": "#b2e2f2", "Abundance": "#f9e076",
             "Healing": "#b4f8c8", "Clarity": "#ffffff", "Love": "#ff6b6b", "Focus": "#a29bfe"
@@ -84,21 +105,50 @@
         const plants = [];
         let audioCtx;
 
+        // --- TIME OF DAY LOGIC ---
+        function updateSky() {
+            const hour = new Date().getHours();
+            let top, bottom;
+            if (hour >= 5 && hour < 8) { top = "#ff9a9e"; bottom = "#fad0c4"; } // Sunrise
+            else if (hour >= 8 && hour < 17) { top = "#87ceeb"; bottom = "#e0f6ff"; } // Day
+            else if (hour >= 17 && hour < 20) { top = "#445069"; bottom = "#e29587"; } // Sunset
+            else { top = "#0b1120"; bottom = "#2c3e50"; } // Night
+
+            document.documentElement.style.setProperty('--sky-top', top);
+            document.documentElement.style.setProperty('--sky-bottom', bottom);
+        }
+        updateSky();
+        setInterval(updateSky, 60000); // Check every minute
+
+        // --- AUDIO ---
         function startAudio() {
             if (audioCtx) return;
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(110, audioCtx.currentTime);
+            osc.type = 'sine'; osc.frequency.setValueAtTime(110, audioCtx.currentTime);
             gain.gain.setValueAtTime(0, audioCtx.currentTime);
             gain.gain.linearRampToValueAtTime(0.05, audioCtx.currentTime + 2);
             osc.connect(gain); gain.connect(audioCtx.destination);
             osc.start();
         }
-
         document.body.addEventListener('click', startAudio);
 
+        // --- GRASS GROWTH ---
+        function growGrass() {
+            for(let i=0; i<5; i++) { // Grow 5 blades at once
+                const blade = document.createElement('div');
+                blade.className = 'blade';
+                blade.style.height = '0px';
+                blade.style.animationDelay = Math.random() * -3 + 's';
+                grassContainer.appendChild(blade);
+                setTimeout(() => {
+                    blade.style.height = (Math.random() * 20 + 10) + 'px';
+                }, 100);
+            }
+        }
+
+        // --- FLOWER LOGIC ---
         function spawnWord() {
             const word = manifestationWords[Math.floor(Math.random() * manifestationWords.length)];
             const el = document.createElement('div');
@@ -118,95 +168,10 @@
             el.addEventListener('click', (e) => {
                 e.stopPropagation();
                 createPlant(parseInt(el.style.left) + 60, el.innerText);
+                growGrass(); // Grass grows whenever you plant
                 el.remove();
             });
         }
         setInterval(spawnWord, 4000);
 
-        function createPlant(x, text) {
-            const plantObj = {
-                x: x,
-                height: 10,
-                maxHeight: 250 + Math.random() * 250,
-                element: document.createElement('div'),
-                canvas: document.createElement('canvas'),
-                stemElement: null
-            };
-
-            plantObj.element.className = 'plant';
-            plantObj.element.style.left = x + 'px';
-
-            plantObj.canvas.width = plantObj.canvas.height = 100;
-            plantObj.canvas.className = 'flower-canvas';
-            
-            const stem = document.createElement('div');
-            stem.className = 'stem';
-
-            const label = document.createElement('div');
-            label.className = 'label';
-            label.innerText = text;
-
-            plantObj.element.appendChild(plantObj.canvas);
-            plantObj.element.appendChild(stem);
-            plantObj.element.appendChild(label);
-            garden.appendChild(plantObj.element);
-
-            drawFlower(plantObj.canvas.getContext('2d'), colorMap[text]);
-            setTimeout(() => plantObj.canvas.classList.add('bloomed'), 100);
-            
-            plantObj.stemElement = stem;
-            plants.push(plantObj);
-        }
-
-        function drawFlower(ctx, color) {
-            const petals = 8;
-            ctx.translate(50, 50);
-            ctx.fillStyle = color;
-            for (let i = 0; i < petals; i++) {
-                ctx.rotate((Math.PI * 2) / petals);
-                ctx.beginPath();
-                ctx.moveTo(0, 0);
-                ctx.bezierCurveTo(25, -25, 25, 25, 0, 0);
-                ctx.fill();
-            }
-            ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(0,0,0,0.1)'; ctx.fill();
-        }
-
-        // --- THE TARGETED SWAY LOGIC ---
-        document.addEventListener('mousemove', (e) => {
-            const swayDistance = 80; // Detect range around the flower head
-
-            plants.forEach(p => {
-                // Get the actual position of the flower head (canvas)
-                const flowerRect = p.canvas.getBoundingClientRect();
-                const flowerX = flowerRect.left + (flowerRect.width / 2);
-                const flowerY = flowerRect.top + (flowerRect.height / 2);
-                
-                // Calculate distance from mouse to flower head
-                const dx = e.clientX - flowerX;
-                const dy = e.clientY - flowerY;
-                const distance = Math.sqrt(dx*dx + dy*dy);
-
-                if (distance < swayDistance) {
-                    // Calculate intensity: closer = harder sway
-                    const power = (1 - (distance / swayDistance)) * 25; 
-                    const direction = dx > 0 ? -power : power; // Sway away from cursor
-                    p.element.style.transform = `rotate(${direction}deg) scale(1.05)`;
-                } else {
-                    p.element.style.transform = `rotate(0deg) scale(1)`;
-                }
-            });
-        });
-
-        setInterval(() => {
-            plants.forEach(p => {
-                if (p.height < p.maxHeight) {
-                    p.height += 10;
-                    p.stemElement.style.height = p.height + 'px';
-                }
-            });
-        }, 100);
-    </script>
-</body>
-</html>
+        function createPlant(x
