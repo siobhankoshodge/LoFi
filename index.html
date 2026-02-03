@@ -2,12 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Manifestation Garden</title>
+    <title>Floating Manifestation Garden</title>
     <style>
         :root {
-            --bg-color: #fdf6e3; /* Warmer summer sun vibe */
-            --stem-color: #a3b18a;
-            --text-color: #6d5d6e;
+            --bg-color: #f0f4f8; /* Soft sky blue/grey */
+            --stem-color: #7d8f69;
+            --text-color: #5a6a82;
+            --accent: #d1e3f0;
         }
 
         body, html {
@@ -15,87 +16,144 @@
             width: 100vw; height: 100vh;
             background-color: var(--bg-color);
             overflow: hidden;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        #garden { width: 100%; height: 100%; position: relative; cursor: crosshair; }
+        #garden { width: 100%; height: 100%; position: relative; }
 
+        /* Floating Seed Style */
+        .seed-word {
+            position: absolute;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid var(--accent);
+            border-radius: 20px;
+            color: var(--text-color);
+            cursor: pointer;
+            font-size: 14px;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease;
+            user-select: none;
+            z-index: 100;
+        }
+
+        .seed-word:hover { transform: scale(1.1); background: #fff; }
+
+        /* The Lo-Fi Overlay */
         .overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; background: url('https://grainy-gradients.vercel.app/noise.svg');
-            opacity: 0.12; z-index: 10;
-        }
-
-        .ui-panel {
-            position: absolute; top: 20px; left: 20px; z-index: 20;
-            color: var(--text-color); background: rgba(255,255,255,0.4);
-            padding: 15px; border-radius: 8px; backdrop-filter: blur(5px);
+            opacity: 0.1; z-index: 10;
         }
 
         @keyframes sway {
-            0%, 100% { transform: rotate(-1deg); }
-            50% { transform: rotate(1deg); }
+            0%, 100% { transform: rotate(-2deg); }
+            50% { transform: rotate(2deg); }
         }
 
         .plant {
             position: absolute; bottom: 0; transform-origin: bottom center;
             display: flex; flex-direction: column; align-items: center;
-            animation: sway 5s ease-in-out infinite;
+            animation: sway 4s ease-in-out infinite;
         }
 
-        .stem { width: 4px; background: var(--stem-color); border-radius: 2px; height: 10px; transition: height 0.5s linear; }
+        .stem { 
+            width: 3px; 
+            background: linear-gradient(to top, #4b5d3f, var(--stem-color)); 
+            border-radius: 2px; 
+            height: 0px; 
+            transition: height 0.3s ease-out; 
+        }
 
-        .flower-canvas { transition: transform 2s ease-out; transform: scale(0); }
+        .flower-canvas { transform: scale(0); transition: transform 2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .flower-canvas.bloomed { transform: scale(1); }
 
         .label {
-            margin-top: 10px; font-size: 12px; color: var(--text-color);
-            background: rgba(255,255,255,0.7); padding: 2px 8px; border-radius: 10px;
-            white-space: nowrap; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            margin-top: 5px; font-size: 11px; color: var(--text-color);
+            text-transform: uppercase; opacity: 0.7;
         }
+
+        .controls {
+            position: absolute; bottom: 20px; right: 20px; z-index: 1000;
+            background: white; padding: 10px; border-radius: 50px; opacity: 0.5;
+        }
+        .controls:hover { opacity: 1; }
     </style>
 </head>
 <body>
 
     <div class="overlay"></div>
-    
-    <div class="ui-panel">
-        <strong>Manifestation Garden</strong><br>
-        <small>Click to plant an intention</small><br>
-        <button onclick="toggleMusic()" style="margin-top:10px; cursor:pointer;">Toggle Summer Calm ♫</button>
-    </div>
-
     <div id="garden"></div>
 
-    <audio id="bgm" loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3"></audio>
+    <div class="controls">
+        <button onclick="toggleMusic()" style="border:none; background:none; cursor:pointer;">Mood: Deep Relax 🌿</button>
+    </div>
+
+    <audio id="bgm" loop src="https://assets.mixkit.co/music/preview/mixkit-spirit-of-the-forest-617.mp3"></audio>
 
     <script>
         const garden = document.getElementById('garden');
-        const colors = ['#ffccbb', '#ffeda0', '#91d18b', '#e1f5fe', '#f8bbd0'];
+        const colors = ['#f9dbbd', '#fca17d', '#da627d', '#9a348e', '#0d0630'];
+        const manifestationWords = ["Peace", "Abundance", "Growth", "Clarity", "Love", "Focus", "Energy", "Healing"];
         const plants = [];
 
         function toggleMusic() {
             const audio = document.getElementById('bgm');
+            audio.volume = 0.4;
             return audio.paused ? audio.play() : audio.pause();
         }
 
-        garden.addEventListener('click', (e) => {
-            const intention = prompt("What are you manifesting?");
-            if (intention) createPlant(e.clientX, intention);
-        });
+        // CREATE FLOATING WORDS
+        function spawnWord() {
+            const word = manifestationWords[Math.floor(Math.random() * manifestationWords.length)];
+            const el = document.createElement('div');
+            el.className = 'seed-word';
+            el.innerText = word;
+            
+            // Random start position
+            el.style.left = Math.random() * (window.innerWidth - 100) + 'px';
+            el.style.top = '-50px';
+            
+            garden.appendChild(el);
+
+            // Animate Floating Down
+            let pos = -50;
+            const speed = 0.5 + Math.random() * 1;
+            const floatInterval = setInterval(() => {
+                pos += speed;
+                el.style.top = pos + 'px';
+                
+                // Remove if it goes off screen
+                if (pos > window.innerHeight) {
+                    clearInterval(floatInterval);
+                    el.remove();
+                }
+            }, 20);
+
+            el.addEventListener('click', () => {
+                clearInterval(floatInterval);
+                createPlant(parseInt(el.style.left), el.innerText);
+                el.remove();
+            });
+        }
+
+        // Spawn a new word every 3 seconds
+        setInterval(spawnWord, 3000);
 
         function createPlant(x, text) {
             const plantObj = {
-                height: 20,
-                maxHeight: 200 + Math.random() * 300,
-                element: document.createElement('div')
+                height: 10,
+                maxHeight: 250 + Math.random() * 350,
+                element: document.createElement('div'),
+                stemElement: null
             };
 
             plantObj.element.className = 'plant';
-            plantObj.element.style.left = (x - 60) + 'px';
+            plantObj.element.style.left = x + 'px';
 
             const canvas = document.createElement('canvas');
-            canvas.width = canvas.height = 120;
+            canvas.width = canvas.height = 100;
             canvas.className = 'flower-canvas';
             
             const stem = document.createElement('div');
@@ -112,41 +170,37 @@
 
             drawFlower(canvas.getContext('2d'), colors[Math.floor(Math.random() * colors.length)]);
             
-            // Start blooming after a moment
-            setTimeout(() => canvas.classList.add('bloomed'), 500);
-
-            // Add to our global tracking array for continuous growth
+            setTimeout(() => canvas.classList.add('bloomed'), 100);
+            
             plantObj.stemElement = stem;
             plants.push(plantObj);
         }
 
         function drawFlower(ctx, color) {
-            const petals = 8;
-            const radius = 30;
-            ctx.translate(60, 60);
+            const petals = 6 + Math.floor(Math.random() * 4);
+            const radius = 25;
+            ctx.translate(50, 50);
             ctx.fillStyle = color;
             for (let i = 0; i < petals; i++) {
                 ctx.rotate((Math.PI * 2) / petals);
                 ctx.beginPath();
                 ctx.moveTo(0, 0);
-                ctx.quadraticCurveTo(radius, -radius, 0, -radius * 1.5);
-                ctx.quadraticCurveTo(-radius, -radius, 0, 0);
+                ctx.bezierCurveTo(radius, -radius, radius, radius, 0, 0);
                 ctx.fill();
             }
-            ctx.beginPath(); ctx.arc(0, 0, 8, 0, Math.PI * 2);
-            ctx.fillStyle = '#fef3b4'; ctx.fill();
+            ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff'; ctx.fill();
         }
 
-        // CONTINUOUS GROWTH ENGINE
-        // Every 3 seconds, all flowers grow slightly until they hit their limit
+        // FAST GROWTH ENGINE
         setInterval(() => {
             plants.forEach(p => {
                 if (p.height < p.maxHeight) {
-                    p.height += 2; // Slow growth
+                    p.height += 5; // Faster growth increment
                     p.stemElement.style.height = p.height + 'px';
                 }
             });
-        }, 3000);
+        }, 1000); // Check every second
 
     </script>
 </body>
