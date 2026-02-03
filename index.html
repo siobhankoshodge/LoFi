@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Proximity Manifestation Garden</title>
+    <title>Reactive Manifestation Garden</title>
     <style>
         :root {
             --bg-color: #f7f9fa;
@@ -41,7 +41,9 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+            /* Smooth spring-like transition */
+            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
         }
 
         .stem { 
@@ -74,51 +76,29 @@
 
     <script>
         const garden = document.getElementById('garden');
-        
         const colorMap = {
-            "Growth": "#ffb7c5",
-            "Peace": "#b2e2f2",
-            "Abundance": "#f9e076",
-            "Healing": "#b4f8c8",
-            "Clarity": "#ffffff",
-            "Love": "#ff6b6b",
-            "Focus": "#a29bfe"
+            "Growth": "#ffb7c5", "Peace": "#b2e2f2", "Abundance": "#f9e076",
+            "Healing": "#b4f8c8", "Clarity": "#ffffff", "Love": "#ff6b6b", "Focus": "#a29bfe"
         };
-
         const manifestationWords = Object.keys(colorMap);
         const plants = [];
         let audioCtx;
 
-        // --- RELIABLE AUDIO: Built-in Synth ---
-        function startBreathingAudio() {
+        function startAudio() {
             if (audioCtx) return;
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            
             osc.type = 'sine';
-            osc.frequency.setValueAtTime(110, audioCtx.currentTime); // Low A drone
-            
+            osc.frequency.setValueAtTime(110, audioCtx.currentTime);
             gain.gain.setValueAtTime(0, audioCtx.currentTime);
             gain.gain.linearRampToValueAtTime(0.05, audioCtx.currentTime + 2);
-            
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
+            osc.connect(gain); gain.connect(audioCtx.destination);
             osc.start();
-
-            // LFO for "breathing" effect
-            const lfo = audioCtx.createOscillator();
-            const lfoGain = audioCtx.createGain();
-            lfo.frequency.value = 0.2; // Slow breathing
-            lfoGain.gain.value = 0.02;
-            lfo.connect(lfoGain);
-            lfoGain.connect(gain.gain);
-            lfo.start();
         }
 
-        document.body.addEventListener('click', startBreathingAudio);
+        document.body.addEventListener('click', startAudio);
 
-        // --- SPAWNING LOGIC ---
         function spawnWord() {
             const word = manifestationWords[Math.floor(Math.random() * manifestationWords.length)];
             const el = document.createElement('div');
@@ -130,7 +110,7 @@
 
             let pos = -60;
             const float = setInterval(() => {
-                pos += 0.7;
+                pos += 0.8;
                 el.style.top = pos + 'px';
                 if (pos > window.innerHeight) { clearInterval(float); el.remove(); }
             }, 20);
@@ -141,7 +121,6 @@
                 el.remove();
             });
         }
-
         setInterval(spawnWord, 4000);
 
         function createPlant(x, text) {
@@ -150,15 +129,15 @@
                 height: 10,
                 maxHeight: 250 + Math.random() * 250,
                 element: document.createElement('div'),
+                canvas: document.createElement('canvas'),
                 stemElement: null
             };
 
             plantObj.element.className = 'plant';
             plantObj.element.style.left = x + 'px';
 
-            const canvas = document.createElement('canvas');
-            canvas.width = canvas.height = 100;
-            canvas.className = 'flower-canvas';
+            plantObj.canvas.width = plantObj.canvas.height = 100;
+            plantObj.canvas.className = 'flower-canvas';
             
             const stem = document.createElement('div');
             stem.className = 'stem';
@@ -167,13 +146,13 @@
             label.className = 'label';
             label.innerText = text;
 
-            plantObj.element.appendChild(canvas);
+            plantObj.element.appendChild(plantObj.canvas);
             plantObj.element.appendChild(stem);
             plantObj.element.appendChild(label);
             garden.appendChild(plantObj.element);
 
-            drawFlower(canvas.getContext('2d'), colorMap[text]);
-            setTimeout(() => canvas.classList.add('bloomed'), 100);
+            drawFlower(plantObj.canvas.getContext('2d'), colorMap[text]);
+            setTimeout(() => plantObj.canvas.classList.add('bloomed'), 100);
             
             plantObj.stemElement = stem;
             plants.push(plantObj);
@@ -194,27 +173,32 @@
             ctx.fillStyle = 'rgba(0,0,0,0.1)'; ctx.fill();
         }
 
-        // --- PROXIMITY REACTION (1cm approx 38px) ---
+        // --- THE TARGETED SWAY LOGIC ---
         document.addEventListener('mousemove', (e) => {
-            const proximityLimit = 50; // Roughly 1-2cm depending on screen density
+            const swayDistance = 80; // Detect range around the flower head
 
             plants.forEach(p => {
-                const rect = p.element.getBoundingClientRect();
-                const plantMidX = rect.left + rect.width / 2;
-                const plantMidY = rect.bottom - (p.height / 2);
+                // Get the actual position of the flower head (canvas)
+                const flowerRect = p.canvas.getBoundingClientRect();
+                const flowerX = flowerRect.left + (flowerRect.width / 2);
+                const flowerY = flowerRect.top + (flowerRect.height / 2);
                 
-                const dist = Math.sqrt(Math.pow(e.clientX - plantMidX, 2) + Math.pow(e.clientY - plantMidY, 2));
+                // Calculate distance from mouse to flower head
+                const dx = e.clientX - flowerX;
+                const dy = e.clientY - flowerY;
+                const distance = Math.sqrt(dx*dx + dy*dy);
 
-                if (dist < proximityLimit) {
-                    const leanDirection = (e.clientX < plantMidX) ? 10 : -10;
-                    p.element.style.transform = `rotate(${leanDirection}deg) scale(1.05)`;
+                if (distance < swayDistance) {
+                    // Calculate intensity: closer = harder sway
+                    const power = (1 - (distance / swayDistance)) * 25; 
+                    const direction = dx > 0 ? -power : power; // Sway away from cursor
+                    p.element.style.transform = `rotate(${direction}deg) scale(1.05)`;
                 } else {
                     p.element.style.transform = `rotate(0deg) scale(1)`;
                 }
             });
         });
 
-        // --- GROWTH ENGINE ---
         setInterval(() => {
             plants.forEach(p => {
                 if (p.height < p.maxHeight) {
@@ -223,7 +207,6 @@
                 }
             });
         }, 100);
-
     </script>
 </body>
 </html>
