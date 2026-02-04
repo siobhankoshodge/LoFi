@@ -24,17 +24,26 @@
             border-radius: 50%; display: flex; align-items: center;
             justify-content: center; cursor: pointer; z-index: 11000;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 2px solid #a29bfe;
+            font-size: 20px;
         }
 
         #start-prompt {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             padding: 20px 40px; background: white; border-radius: 50px;
             font-weight: bold; color: #4a5568; cursor: pointer; z-index: 10000;
-            border: 2px solid #a29bfe;
+            border: 2px solid #a29bfe; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
         }
 
-        #universe { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9500; }
-        #label-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; }
+        #universe, #label-layer, #garden, #grass-container {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+        }
+
+        #grass-container { z-index: 500; height: 80px; top: auto; bottom: 0; }
+        #label-layer { z-index: 9999; }
+        #garden { z-index: 10; }
+        #universe { z-index: 9500; }
 
         .flower-label {
             position: absolute; background: rgba(255,255,255,0.95); 
@@ -43,59 +52,15 @@
             transition: opacity 1.5s;
         }
 
-        #grass-container { position: absolute; bottom: 0; left: 0; width: 100%; height: 80px; z-index: 500; pointer-events: none; }
         .blade { position: absolute; bottom: 0; width: 3px; background: #5d6d4a; border-radius: 4px; transition: height 2s, opacity 2s; }
-
-        #garden { position: absolute; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
 
         @keyframes windSway { from { transform: rotate(-1.5deg); } to { transform: rotate(1.5deg); } }
 
         .plant {
             position: absolute; bottom: 20px; width: 4px;
             transform-origin: bottom center; animation: windSway 3s ease-in-out infinite alternate;
-            z-index: 5; transition: opacity 2s;
-            display: flex; flex-direction: column; align-items: center;
+            transition: opacity 2s; display: flex; flex-direction: column; align-items: center;
         }
 
         .flower-head {
-            width: 10px; height: 10px; background: #fff8e1; border-radius: 50%;
-            position: relative; transform: scale(0); transition: transform 1.2s;
-            z-index: 10;
-        }
-
-        .petal {
-            position: absolute; width: 40px; height: 20px;
-            border-radius: 50% 50% 50% 50% / 100% 100% 0% 0%;
-            transform-origin: center left; opacity: 0.8;
-            top: 50%; left: 50%;
-            transition: transform 4s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 3s;
-        }
-
-        .stem {
-            width: 3px; height: 0px; 
-            background: linear-gradient(to top, #1a2214, var(--stem-color));
-            transition: height 1.5s ease-out; border-radius: 2px;
-            margin-top: -5px; /* Ensures head sits ON the stalk */
-        }
-
-        .seed-word {
-            position: absolute; padding: 12px 24px; background: white; 
-            border: 2px solid #a29bfe; border-radius: 30px;
-            color: #4a5568; font-weight: bold; cursor: pointer; z-index: 9000;
-        }
-    </style>
-</head>
-<body>
-
-    <div id="audio-control" onclick="toggleAudio()">🔇</div>
-    <div id="start-prompt" onclick="initGarden()">Begin Manifesting</div>
-    <div id="universe"></div>
-    <div id="label-layer"></div>
-    <div id="garden"></div>
-    <div id="grass-container"></div>
-
-    <script>
-        const garden = document.getElementById('garden');
-        const grass = document.getElementById('grass-container');
-        const universe = document.getElementById('universe');
-        const labelLayer = document.getElementById('label
+            width: 12
