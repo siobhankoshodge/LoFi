@@ -13,130 +13,138 @@
 
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
-            overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif;
+            overflow: hidden; font-family: sans-serif;
             background: linear-gradient(to bottom, var(--sky-top), var(--sky-bottom));
         }
 
         #setup-overlay {
             position: fixed; inset: 0; 
             background: linear-gradient(to bottom, var(--sky-top), var(--sky-bottom));
-            z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 9999; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center;
             padding: 20px; text-align: center;
         }
 
         .instructions {
             max-width: 450px; margin-bottom: 20px; line-height: 1.5;
-            color: var(--accent); font-style: italic; font-size: 18px;
+            color: var(--accent); font-style: italic; font-size: 1.1rem;
         }
 
-        .word-grid { 
-            display: flex; flex-wrap: wrap; justify-content: center; 
-            gap: 12px; max-width: 600px; margin: 20px auto;
-            min-height: 50px;
+        /* Forced visibility for the grid */
+        #word-selector { 
+            display: flex !important; flex-wrap: wrap !important; 
+            justify-content: center !important; gap: 10px; 
+            max-width: 600px; margin: 20px auto;
+            min-height: 150px; width: 100%;
         }
 
         .choice-pill {
-            padding: 12px 22px; border: 2px solid rgba(255,255,255,0.7); border-radius: 25px;
-            cursor: pointer; color: #333; background: rgba(255,255,255,0.5);
-            font-weight: 500; transition: 0.2s;
+            padding: 12px 20px; border: 2px solid white; border-radius: 25px;
+            cursor: pointer; color: #333; background: rgba(255,255,255,0.6);
+            font-weight: bold; font-size: 1rem;
         }
 
-        .choice-pill.selected { background: white; color: var(--accent); border-color: white; font-weight: bold; }
+        .choice-pill.selected { background: var(--accent); color: white; border-color: var(--accent); }
 
-        #ui-layer { position: fixed; top: 20px; width: 100%; text-align: center; color: var(--accent); z-index: 100; pointer-events: none; display: none; }
+        #ui-layer { position: fixed; top: 10px; width: 100%; text-align: center; color: var(--accent); z-index: 100; display: none; }
         #controls { position: fixed; bottom: 20px; left: 20px; z-index: 101; display: none; }
         
-        button#start-btn {
-            padding: 15px 45px; border-radius: 35px; border: none;
-            background: var(--accent); color: white; font-weight: bold;
-            cursor: pointer; opacity: 0.3; pointer-events: none; margin-top: 20px;
+        #start-btn {
+            padding: 15px 40px; border-radius: 35px; border: none;
+            background: #4a7a8c; color: white; font-weight: bold;
+            cursor: pointer; opacity: 0.3; pointer-events: none;
         }
-        button#start-btn.active { opacity: 1; pointer-events: auto; }
+        #start-btn.active { opacity: 1; pointer-events: auto; }
 
-        button.toggle { padding: 10px 18px; border-radius: 20px; border: none; background: white; color: var(--accent); font-weight: bold; }
-
-        .garden { z-index: 2; position: absolute; inset: 0; pointer-events: none; }
-        .grass { z-index: 10; position: absolute; bottom: 0; width: 100%; height: 45px; background: #5ea300; border-top: 5px solid #74b816; }
-        .label-layer { z-index: 11; position: absolute; bottom: 50px; width: 100%; pointer-events: none; }
-        .seed-layer { z-index: 20; position: absolute; inset: 0; }
-
-        .seed { position: absolute; padding: 12px 20px; background: white; border-radius: 30px; font-weight: 600; color: #555; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        .plant { position: absolute; bottom: 45px; display: flex; flex-direction: column-reverse; align-items: center; transform-origin: bottom center; animation: breeze 5s ease-in-out infinite alternate; }
-        @keyframes breeze { from { transform: rotate(-3deg); } to { transform: rotate(3deg); } }
-        .stem { width: 6px; background: #74b816; transform-origin: bottom; transition: height 2s ease-out, opacity 3s; }
-        .flower-head { position: relative; width: 22px; height: 22px; background: #ffec99; border-radius: 50%; transition: opacity 3s; }
-        .petal { position: absolute; width: 45px; height: 22px; border-radius: 50%; left: 50%; top: 50%; margin-top: -11px; transform-origin: left center; transition: 4s; }
-        .word-pill { position: absolute; font-size: 13px; color: white; background: rgba(0,0,0,0.4); padding: 5px 14px; border-radius: 15px; transform: translateX(-50%); transition: opacity 3s; }
+        .garden { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+        .grass { position: absolute; bottom: 0; width: 100%; height: 45px; background: #5ea300; z-index: 10; border-top: 4px solid #74b816;}
+        .seed { position: absolute; padding: 10px 18px; background: white; border-radius: 30px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .plant { position: absolute; bottom: 45px; display: flex; flex-direction: column-reverse; align-items: center; }
+        .stem { width: 6px; background: #74b816; transition: height 2s; }
+        .flower-head { width: 20px; height: 20px; background: #ffec99; border-radius: 50%; position: relative; }
+        .petal { position: absolute; width: 40px; height: 20px; border-radius: 50%; left: 50%; top: 50%; margin-top: -10px; transform-origin: left center; transition: 4s; }
     </style>
 </head>
 <body>
 
     <div id="setup-overlay">
-        <h1 style="color: var(--accent); margin: 0 0 10px 0;">Manifestation Meadow</h1>
+        <h1 style="color: var(--accent); margin-bottom: 10px;">Manifestation Meadow</h1>
         <div class="instructions">Choose your manifestation, take a moment, and be mindful in the meadow with your words.</div>
-        <p style="color: var(--accent); font-weight: bold; margin-bottom: 10px;">Select 2 to 10 intentions:</p>
         
-        <div class="word-grid" id="word-selector"></div>
+        <div id="word-selector">
+            </div>
         
         <button id="start-btn" onclick="startGame()">Enter the Meadow</button>
     </div>
 
-    <div id="ui-layer"><h2 style="margin:0;">Your Meadow</h2><p id="counter">0 / 50 Intentions</p></div>
-    <div id="controls"><button class="toggle" id="soundToggle" onclick="toggleSound()">Sound: OFF</button></div>
-    <div class="garden" id="garden"></div>
+    <div id="ui-layer">
+        <h2 id="counter">0 / 50 Intentions</h2>
+    </div>
+
+    <div id="controls">
+        <button onclick="toggleSound()" style="padding:10px; border-radius:20px; border:none; background:white; font-weight:bold; color:#4a7a8c;">
+            Sound: <span id="snd-st">OFF</span>
+        </button>
+    </div>
+
+    <div id="garden" class="garden"></div>
+    <div id="seed-container" style="position:absolute; inset:0; pointer-events:auto; z-index:20;"></div>
     <div class="grass"></div>
-    <div class="label-layer" id="labels"></div>
-    <div class="seed-layer" id="seed-container"></div>
 
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            const allWords = ["Peace", "Clarity", "Growth", "Love", "Abundance", "Kindness", "Focus", "Joy", "Health", "Balance", "Courage", "Trust", "Patience", "Wisdom", "Strength", "Grace"];
-            const colors = ['#ffb6c1', '#add8e6', '#dda0dd', '#ffdab9', '#b0e0e6', '#fafad2'];
-            let selectedWords = [];
-            let flowerCount = 0;
-            let isMuted = true;
-            let audioCtx;
-            let droneGains = [];
+        (function() {
+            const words = ["Peace", "Clarity", "Growth", "Love", "Abundance", "Kindness", "Focus", "Joy", "Health", "Balance", "Courage", "Trust", "Patience", "Wisdom", "Strength", "Grace"];
+            let selected = [];
+            let count = 0;
+            let audioCtx, droneGains = [], isMuted = true;
 
-            const grid = document.getElementById('word-selector');
-            allWords.forEach(word => {
-                const pill = document.createElement('div');
-                pill.className = 'choice-pill';
-                pill.textContent = word;
-                pill.addEventListener('click', function() {
-                    if (this.classList.contains('selected')) {
-                        this.classList.remove('selected');
-                        selectedWords = selectedWords.filter(w => w !== word);
-                    } else if (selectedWords.length < 10) {
-                        this.classList.add('selected');
-                        selectedWords.push(word);
-                    }
-                    document.getElementById('start-btn').className = selectedWords.length >= 2 ? 'active' : '';
+            // --- RECOVERY LOGIC: Retry finding the grid until it exists ---
+            function initGrid() {
+                const grid = document.getElementById('word-selector');
+                if (!grid) {
+                    setTimeout(initGrid, 100);
+                    return;
+                }
+                
+                grid.innerHTML = ''; // Clear any existing
+                words.forEach(w => {
+                    const p = document.createElement('div');
+                    p.className = 'choice-pill';
+                    p.textContent = w;
+                    p.onclick = () => {
+                        if (p.classList.contains('selected')) {
+                            p.classList.remove('selected');
+                            selected = selected.filter(x => x !== w);
+                        } else if (selected.length < 10) {
+                            p.classList.add('selected');
+                            selected.push(w);
+                        }
+                        const b = document.getElementById('start-btn');
+                        b.className = selected.length >= 2 ? 'active' : '';
+                    };
+                    grid.appendChild(p);
                 });
-                grid.appendChild(pill);
-            });
+            }
+            initGrid();
 
             window.startGame = function() {
                 document.getElementById('setup-overlay').style.display = 'none';
                 document.getElementById('ui-layer').style.display = 'block';
                 document.getElementById('controls').style.display = 'block';
                 initAudio();
-                setInterval(spawnSeed, 1800);
+                setInterval(spawn, 1800);
             };
 
             function initAudio() {
                 if (audioCtx) return;
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                [110, 164.81, 220].forEach(freq => {
-                    const osc = audioCtx.createOscillator();
-                    const gain = audioCtx.createGain();
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-                    gain.gain.value = 0; 
-                    osc.connect(gain);
-                    gain.connect(audioCtx.destination);
-                    osc.start();
-                    droneGains.push(gain);
+                [110, 164, 220].forEach(f => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.frequency.value = f;
+                    g.gain.value = 0;
+                    o.connect(g); g.connect(audioCtx.destination);
+                    o.start(); droneGains.push(g);
                 });
             }
 
@@ -144,83 +152,64 @@
                 if (!audioCtx) initAudio();
                 if (audioCtx.state === 'suspended') await audioCtx.resume();
                 isMuted = !isMuted;
-                document.getElementById('soundToggle').textContent = isMuted ? "Sound: OFF" : "Sound: ON";
+                document.getElementById('snd-st').textContent = isMuted ? "OFF" : "ON";
                 droneGains.forEach(g => g.gain.setTargetAtTime(isMuted ? 0 : 0.02, audioCtx.currentTime, 0.2));
             };
 
-            function playChime() {
-                if (isMuted || !audioCtx) return;
-                const freqs = [523.25, 587.33, 659.25, 783.99, 880.00]; 
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.frequency.setValueAtTime(freqs[Math.floor(Math.random()*freqs.length)], audioCtx.currentTime);
-                gain.gain.setValueAtTime(0.4, audioCtx.currentTime); 
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2);
-                osc.connect(gain); gain.connect(audioCtx.destination);
-                osc.start(); osc.stop(audioCtx.currentTime + 1.5);
-            }
+            function spawn() {
+                if (count >= 50) return;
+                const s = document.createElement('div');
+                s.className = 'seed';
+                s.textContent = selected[Math.floor(Math.random()*selected.length)];
+                s.style.left = (Math.random()*80 + 10) + '%';
+                s.style.top = '-50px';
+                document.getElementById('seed-container').appendChild(s);
 
-            function spawnSeed() {
-                if (flowerCount >= 50) return;
-                const seed = document.createElement('div');
-                seed.className = 'seed';
-                seed.textContent = selectedWords[Math.floor(Math.random() * selectedWords.length)];
-                const xPos = Math.random() * 80 + 10;
-                seed.style.left = xPos + '%';
-                seed.style.top = '-60px';
-                document.getElementById('seed-container').appendChild(seed);
-
-                const catchMe = () => {
-                    playChime(); createFlower(xPos, seed.textContent);
-                    seed.remove(); flowerCount++;
-                    document.getElementById('counter').textContent = `${flowerCount} / 50 Intentions`;
-                    if (flowerCount >= 50) releaseGarden();
+                const collect = () => {
+                    createFlower(parseFloat(s.style.left), s.textContent);
+                    s.remove(); count++;
+                    document.getElementById('counter').textContent = count + " / 50 Intentions";
+                    if (count >= 50) release();
                 };
-                seed.onmousedown = catchMe;
-                seed.ontouchstart = (e) => { e.preventDefault(); catchMe(); };
-                let y = -60;
-                const drift = setInterval(() => {
-                    y += 1.5; seed.style.top = y + 'px';
-                    if (y > window.innerHeight || flowerCount >= 50) { clearInterval(drift); if(seed.parentNode) seed.remove(); }
+                s.onmousedown = collect;
+                s.ontouchstart = (e) => { e.preventDefault(); collect(); };
+
+                let y = -50;
+                const t = setInterval(() => {
+                    y += 2; s.style.top = y + 'px';
+                    if (y > window.innerHeight || count >= 50) { clearInterval(t); if(s.parentNode) s.remove(); }
                 }, 16);
             }
 
-            function createFlower(x, word) {
-                const color = colors[Math.floor(Math.random() * colors.length)];
-                const plant = document.createElement('div');
-                plant.className = 'plant';
-                plant.style.left = x + '%';
-                plant.style.animationDelay = `-${Math.random() * 5}s`;
-                const head = document.createElement('div');
-                head.className = 'flower-head';
-                for (let i = 0; i < 6; i++) {
-                    const petal = document.createElement('div');
-                    petal.className = 'petal';
-                    petal.style.backgroundColor = color;
-                    petal.style.transform = `rotate(${i * 60}deg)`;
-                    head.appendChild(petal);
+            function createFlower(x, txt) {
+                const p = document.createElement('div');
+                p.className = 'plant'; p.style.left = x + '%';
+                const h = document.createElement('div');
+                h.className = 'flower-head';
+                for(let i=0; i<6; i++) {
+                    const pt = document.createElement('div');
+                    pt.className = 'petal';
+                    pt.style.background = ['#ffb6c1','#add8e6','#dda0dd','#ffdab9'][Math.floor(Math.random()*4)];
+                    pt.style.transform = `rotate(${i*60}deg)`;
+                    h.appendChild(pt);
                 }
-                const stem = document.createElement('div');
-                stem.className = 'stem';
-                stem.style.height = '0px';
-                plant.appendChild(stem); plant.appendChild(head);
-                document.getElementById('garden').appendChild(plant);
-                const pill = document.createElement('div');
-                pill.className = 'word-pill';
-                pill.textContent = word; pill.style.left = x + '%';
-                document.getElementById('labels').appendChild(pill);
-                setTimeout(() => { stem.style.height = (Math.random() * 150 + 150) + 'px'; }, 50);
+                const st = document.createElement('div'); st.className = 'stem'; st.style.height = '0px';
+                p.appendChild(st); p.appendChild(h);
+                document.getElementById('garden').appendChild(p);
+                setTimeout(() => st.style.height = (Math.random()*100 + 100) + 'px', 50);
             }
 
-            function releaseGarden() {
+            function release() {
                 document.querySelectorAll('.petal').forEach(p => {
-                    p.style.transform += ` translate(${(Math.random()-0.5)*1500}px, -120vh) rotate(${Math.random()*1200}deg)`;
+                    p.style.transform += ` translate(${(Math.random()-0.5)*1000}px, -100vh) rotate(720deg)`;
                     p.style.opacity = '0';
                 });
-                setTimeout(() => { document.querySelectorAll('.stem, .flower-head, .word-pill').forEach(b => b.style.opacity = '0'); }, 1000);
-                setTimeout(() => { location.reload(); }, 5500);
+                setTimeout(() => {
+                    document.querySelectorAll('.plant').forEach(pl => pl.style.opacity = '0');
+                }, 1000);
+                setTimeout(() => location.reload(), 6000);
             }
-        });
+        })();
     </script>
 </body>
 </html>
