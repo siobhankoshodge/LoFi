@@ -18,67 +18,57 @@
             touch-action: manipulation;
         }
 
-        /* UI CONTROLS */
-        #ui-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20000; }
-        
-        #audio-control {
-            position: absolute; top: 20px; right: 20px;
-            width: 45px; height: 45px; background: white;
-            border-radius: 50%; display: flex; align-items: center;
-            justify-content: center; cursor: pointer; pointer-events: auto;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 2px solid #a29bfe;
+        /* Fixed UI Layer */
+        #controls {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 10000;
         }
 
         #start-prompt {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            padding: 20px 40px; background: white; border-radius: 50px;
+            padding: 15px 30px; background: white; border-radius: 50px;
             font-weight: bold; color: #4a5568; cursor: pointer; pointer-events: auto;
-            border: 2px solid #a29bfe; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border: 2px solid #a29bfe; box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
 
-        /* GARDEN LAYERS */
-        #universe { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9500; }
-        #label-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; }
-        #garden { position: absolute; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
-        #grass-container { position: absolute; bottom: 0; left: 0; width: 100%; height: 80px; z-index: 500; pointer-events: none; }
-
-        .flower-label {
-            position: absolute; background: rgba(255,255,255,0.95); 
-            padding: 4px 12px; border-radius: 10px; font-size: 11px; 
-            transform: translateX(-50%); color: #4a5568; font-weight: bold;
-            transition: opacity 1.5s;
+        #audio-toggle {
+            position: absolute; top: 20px; right: 20px;
+            width: 44px; height: 44px; background: white; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; pointer-events: auto; border: 2px solid #a29bfe;
+            font-size: 20px;
         }
 
-        .blade { position: absolute; bottom: 0; width: 3px; background: #5d6d4a; border-radius: 4px; transition: height 2s, opacity 2s; }
+        /* Meadow Layers */
+        #garden, #grass-layer, #label-layer, #universe {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+        }
+        #grass-layer { bottom: 0; top: auto; height: 100px; z-index: 500; }
+        #garden { z-index: 100; }
+        #label-layer { z-index: 1000; }
 
-        @keyframes windSway { from { transform: rotate(-1.5deg); } to { transform: rotate(1.5deg); } }
+        .seed-word {
+            position: absolute; padding: 10px 20px; background: white;
+            border: 2px solid #a29bfe; border-radius: 25px;
+            color: #4a5568; font-weight: bold; cursor: pointer;
+            pointer-events: auto; z-index: 5000;
+        }
 
         .plant {
-            position: absolute; bottom: 20px; width: 4px;
-            transform-origin: bottom center; animation: windSway 3s ease-in-out infinite alternate;
-            transition: opacity 2s; display: flex; flex-direction: column; align-items: center;
+            position: absolute; bottom: 20px; display: flex;
+            flex-direction: column; align-items: center;
+            transform-origin: bottom center; animation: sway 4s ease-in-out infinite alternate;
         }
+
+        @keyframes sway { from { transform: rotate(-1deg); } to { transform: rotate(1deg); } }
 
         .flower-head {
             width: 14px; height: 14px; background: #fff8e1; border-radius: 50%;
-            position: relative; transform: scale(0); transition: transform 1.2s;
-            z-index: 20;
+            position: relative; transform: scale(0); transition: transform 1s;
         }
 
         .petal {
-            position: absolute; width: 40px; height: 20px;
-            border-radius: 50% 50% 50% 50% / 100% 100% 0% 0%;
-            transform-origin: center left; opacity: 0.8;
-            top: 50%; left: 50%;
-            transition: transform 4s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 3s;
-        }
-
-        .stem {
-            width: 3px; height: 0px; 
-            background: linear-gradient(to top, #1a2214, var(--stem-color));
-            transition: height 1.5s ease-out; border-radius: 2px;
-            margin-top: -5px;
-        }
-
-        .seed-word {
-            position: absolute; padding: 12px 24px; background:
+            position: absolute; width: 35px; height: 18px;
+            border-radius: 40px; top: 50%; left: 50%;
+            transform-origin: left
