@@ -3,72 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Manifestation Meadow</title>
+    <title>Meadow</title>
     <style>
-        :root {
-            --sky-top: #87ceeb;
-            --sky-bottom: #e0f6ff;
-            --stem-color: #4a5c37;
-        }
-
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
-            background: linear-gradient(to bottom, var(--sky-top), var(--sky-bottom)) no-repeat fixed;
-            overflow: hidden; font-family: 'Courier New', Courier, monospace;
-            touch-action: manipulation;
+            background: linear-gradient(to bottom, #87ceeb, #e0f6ff);
+            overflow: hidden; touch-action: none; font-family: sans-serif;
         }
 
-        /* Fixed UI Layer */
-        #controls {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; z-index: 10000;
-        }
-
-        #start-prompt {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            padding: 15px 30px; background: white; border-radius: 50px;
-            font-weight: bold; color: #4a5568; cursor: pointer; pointer-events: auto;
-            border: 2px solid #a29bfe; box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-
-        #audio-toggle {
-            position: absolute; top: 20px; right: 20px;
-            width: 44px; height: 44px; background: white; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; pointer-events: auto; border: 2px solid #a29bfe;
-            font-size: 20px;
-        }
-
-        /* Meadow Layers */
-        #garden, #grass-layer, #label-layer, #universe {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none;
-        }
-        #grass-layer { bottom: 0; top: auto; height: 100px; z-index: 500; }
-        #garden { z-index: 100; }
-        #label-layer { z-index: 1000; }
-
-        .seed-word {
+        /* The falling words */
+        .seed {
             position: absolute; padding: 10px 20px; background: white;
-            border: 2px solid #a29bfe; border-radius: 25px;
-            color: #4a5568; font-weight: bold; cursor: pointer;
-            pointer-events: auto; z-index: 5000;
+            border: 2px solid #a29bfe; border-radius: 20px;
+            cursor: pointer; z-index: 1000; font-weight: bold;
         }
 
-        .plant {
-            position: absolute; bottom: 20px; display: flex;
-            flex-direction: column; align-items: center;
-            transform-origin: bottom center; animation: sway 4s ease-in-out infinite alternate;
+        /* The flower container */
+        .flower {
+            position: absolute; bottom: 0; display: flex;
+            flex-direction: column; align-items: center; pointer-events: none;
         }
 
-        @keyframes sway { from { transform: rotate(-1deg); } to { transform: rotate(1deg); } }
-
-        .flower-head {
-            width: 14px; height: 14px; background: #fff8e1; border-radius: 50%;
-            position: relative; transform: scale(0); transition: transform 1s;
+        .head {
+            width: 15px; height: 15px; border-radius: 50%;
+            position: relative; z-index: 10;
         }
 
         .petal {
-            position: absolute; width: 35px; height: 18px;
-            border-radius: 40px; top: 50%; left: 50%;
-            transform-origin: left
+            position: absolute; width: 30px; height: 15px;
+            border-radius: 20px; top: 50%; left: 50%;
+            transform-origin: left center; transition: all 4s;
+        }
+
+        .stem {
+            width: 3px; background: #4a5c37; transition: height 1s;
+        }
+    </style>
+</head>
+<body>
+
+    <script>
+        const colors = {"Peace": "#b2e2f2", "Love": "#ffb7c5", "Abundance": "#f9e076", "Growth": "#b4f8c8"};
+        let count = 0;
+
+        // Start dropping words immediately
+        function init() {
+            spawn();
+            setInterval(spawn, 3000);
+        }
+
+        function spawn() {
+            const el = document.createElement('div');
+            el.className = 'seed';
+            const keys = Object.keys(colors);
+            const text = keys[Math.floor(Math.random() * keys.length)];
+            el.innerText = text;
+            el.style.left = Math.random() * 80 + 10 + '%';
+            el.style.top = '-50px';
+            document.body.appendChild(el);
+
+            let y = -50;
+            const fall = setInterval(() => {
+                y += 2;
+                el.style.top = y + 'px';
+                if (y > window.innerHeight) { clearInterval(fall); el.remove(); }
+            }, 20);
+
+            // Handle touch and click
+            const grow = (e) => {
+                e.preventDefault();
+                createFlower(el.offsetLeft, colors[text]);
+                clearInterval(fall);
+                el.remove();
+            };
+            el.addEventListener('mousedown', grow);
+            el.addEventListener('touchstart', grow);
+        }
+
+        function createFlower(x, color) {
+            count++;
+            const f = document.createElement('div');
+            f.className = 'flower';
+            f.style.left = x + 'px';
+
+            const h = document.createElement('div');
+            h.className = 'head';
+            h.style.backgroundColor = color;
+
+            for(let i=0; i<6; i++) {
+                const p = document.createElement('div');
+                p.className = 'petal';
+                p.style.backgroundColor = color;
+                p.style.transform = `rotate(${i*60}deg) translate(5px, -50%)`;
+                h.appendChild(p);
+            }
+
+            const s = document.createElement('div');
+            s.className = 'stem';
+            
+            f.appendChild(h);
+            f.appendChild(s);
+            document.body.appendChild(f);
+
+            setTimeout(() => {
+                s.style.height = (100 + Math.random() * 200) + 'px';
+            }, 50);
+
+            if (count >= 50) blowAway();
+        }
+
+        function blowAway() {
+            count = 0;
+            const petals = document.querySelectorAll('.petal');
+            petals.forEach(p => {
+                p.style.transform = `translate(${(Math.random()-0.5)*500}px, -100vh) rotate(720deg)`;
+                p.style.opacity = '0';
+            });
+            setTimeout(() => {
+                document.querySelectorAll('.flower').forEach(f => f.remove());
+            }, 5000);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
