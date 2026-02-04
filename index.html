@@ -17,19 +17,14 @@
             background: linear-gradient(to bottom, var(--sky-top), var(--sky-bottom));
         }
 
-        /* Setup Overlay - Now with Sky Gradient */
         #setup-overlay {
             position: fixed; inset: 0; 
             background: linear-gradient(to bottom, var(--sky-top), var(--sky-bottom));
-            z-index: 1000;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center;
             padding: 20px; text-align: center; transition: opacity 1s;
         }
 
-        .word-grid {
-            display: flex; flex-wrap: wrap; justify-content: center;
-            gap: 10px; max-width: 500px; margin: 20px 0;
-        }
+        .word-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; max-width: 500px; margin: 20px 0; }
 
         .choice-pill {
             padding: 10px 20px; border: 2px solid rgba(255,255,255,0.5); border-radius: 25px;
@@ -37,73 +32,42 @@
             backdrop-filter: blur(5px);
         }
 
-        .choice-pill.selected {
-            background: white; color: var(--accent); border-color: white; font-weight: bold;
-        }
+        .choice-pill.selected { background: white; color: var(--accent); border-color: white; font-weight: bold; }
 
-        /* UI Elements */
-        #ui-layer {
-            position: fixed; top: 20px; width: 100%;
-            text-align: center; color: var(--accent); z-index: 100; pointer-events: none; display: none;
-        }
+        #ui-layer { position: fixed; top: 20px; width: 100%; text-align: center; color: var(--accent); z-index: 100; pointer-events: none; display: none; }
         
-        /* Sound Toggle - Moved to Bottom Left */
-        #controls { 
-            position: fixed; bottom: 20px; left: 20px; z-index: 101; display: none;
-        }
+        #controls { position: fixed; bottom: 20px; left: 20px; z-index: 101; display: none; }
         
         button#start-btn {
             padding: 15px 40px; border-radius: 30px; border: none;
             background: var(--accent); color: white; font-weight: bold;
             cursor: pointer; opacity: 0.5; pointer-events: none;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
         button#start-btn.active { opacity: 1; pointer-events: auto; }
 
         button.toggle {
-            padding: 8px 15px; border-radius: 20px; border: none;
-            background: rgba(255,255,255,0.8); cursor: pointer; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            font-size: 12px; font-weight: bold; color: var(--accent);
+            padding: 10px 18px; border-radius: 20px; border: none;
+            background: white; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            font-weight: bold; color: var(--accent);
         }
 
-        /* Garden Layers */
         .garden { z-index: 2; position: absolute; inset: 0; pointer-events: none; }
         .grass { z-index: 10; position: absolute; bottom: 0; width: 100%; height: 40px; background: #5ea300; border-top: 5px solid #74b816; }
         .label-layer { z-index: 11; position: absolute; bottom: 45px; width: 100%; pointer-events: none; }
         .seed-layer { z-index: 20; position: absolute; inset: 0; }
 
-        /* Seeds & Plants */
         .seed {
             position: absolute; padding: 12px 20px; background: white;
             border-radius: 30px; cursor: pointer; font-weight: 600;
             box-shadow: 0 8px 15px rgba(0,0,0,0.1); color: #555; touch-action: none;
         }
 
-        .plant { 
-            position: absolute; bottom: 40px; display: flex; 
-            flex-direction: column-reverse; align-items: center;
-            transform-origin: bottom center;
-            animation: breeze 5s ease-in-out infinite alternate;
-        }
-
+        .plant { position: absolute; bottom: 40px; display: flex; flex-direction: column-reverse; align-items: center; transform-origin: bottom center; animation: breeze 5s ease-in-out infinite alternate; }
         @keyframes breeze { from { transform: rotate(-3deg); } to { transform: rotate(3deg); } }
-        
         .stem { width: 6px; background: #74b816; transform-origin: bottom; transition: height 2s ease-out, opacity 3s; }
         .flower-head { position: relative; width: 20px; height: 20px; background: #ffec99; border-radius: 50%; z-index: 5; transition: opacity 3s; }
-
-        .petal {
-            position: absolute; width: 45px; height: 22px; border-radius: 50%;
-            left: 50%; top: 50%; margin-top: -11px;
-            transform-origin: left center;
-            transition: transform 4s cubic-bezier(0.45, 0.05, 0.55, 0.95), opacity 4s;
-        }
-
-        .word-pill {
-            position: absolute; font-size: 12px; color: white; background: rgba(0,0,0,0.4);
-            padding: 4px 12px; border-radius: 15px; transform: translateX(-50%);
-            white-space: nowrap; transition: opacity 3s;
-        }
+        .petal { position: absolute; width: 45px; height: 22px; border-radius: 50%; left: 50%; top: 50%; margin-top: -11px; transform-origin: left center; transition: transform 4s ease-in-out, opacity 4s; }
+        .word-pill { position: absolute; font-size: 12px; color: white; background: rgba(0,0,0,0.4); padding: 4px 12px; border-radius: 15px; transform: translateX(-50%); white-space: nowrap; transition: opacity 3s; }
     </style>
 </head>
 <body>
@@ -137,9 +101,9 @@
         let flowerCount = 0;
         let isMuted = true;
         let audioCtx;
-        let droneOscs = [];
+        let droneGains = [];
 
-        // --- Setup Logic ---
+        // --- Setup Grid ---
         const grid = document.getElementById('word-selector');
         allWords.forEach(word => {
             const pill = document.createElement('div');
@@ -153,19 +117,10 @@
                     pill.classList.add('selected');
                     selectedWords.push(word);
                 }
-                updateStartButton();
+                document.getElementById('start-btn').className = selectedWords.length >= 2 ? 'active' : '';
             };
             grid.appendChild(pill);
         });
-
-        function updateStartButton() {
-            const btn = document.getElementById('start-btn');
-            if (selectedWords.length >= 2) {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
-            }
-        }
 
         function startGame() {
             document.getElementById('setup-overlay').style.opacity = '0';
@@ -173,33 +128,43 @@
                 document.getElementById('setup-overlay').style.display = 'none';
                 document.getElementById('ui-layer').style.display = 'block';
                 document.getElementById('controls').style.display = 'block';
-                initAudio();
+                initAudio(); 
                 setInterval(spawnSeed, 1800);
             }, 1000);
         }
 
-        // --- Audio Logic ---
-        function toggleSound() {
-            if (!audioCtx) initAudio();
-            isMuted = !isMuted;
-            document.getElementById('soundToggle').textContent = isMuted ? "Sound: OFF" : "Sound: ON";
-            audioCtx.resume();
-            droneOscs.forEach(g => g.gain.setTargetAtTime(isMuted ? 0 : 0.02, audioCtx.currentTime, 0.1));
-        }
-
+        // --- FIXED AUDIO ENGINE ---
         function initAudio() {
             if (audioCtx) return;
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            
             [110, 164.81, 220].forEach(freq => {
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.type = 'sine';
                 osc.frequency.value = freq;
-                gain.gain.value = 0; 
+                gain.gain.value = 0; // Start silent
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
                 osc.start();
-                droneOscs.push(gain);
+                droneGains.push(gain);
+            });
+        }
+
+        async function toggleSound() {
+            if (!audioCtx) initAudio();
+            
+            // Critical for Chrome/Mobile: Resume context on user click
+            if (audioCtx.state === 'suspended') {
+                await audioCtx.resume();
+            }
+
+            isMuted = !isMuted;
+            document.getElementById('soundToggle').textContent = isMuted ? "Sound: OFF" : "Sound: ON";
+            
+            const targetVolume = isMuted ? 0 : 0.02;
+            droneGains.forEach(g => {
+                g.gain.setTargetAtTime(targetVolume, audioCtx.currentTime, 0.2);
             });
         }
 
@@ -208,9 +173,11 @@
             const freqs = [523.25, 587.33, 659.25, 783.99, 880.00]; 
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
+            
             osc.frequency.setValueAtTime(freqs[Math.floor(Math.random()*freqs.length)], audioCtx.currentTime);
-            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.5);
+            gain.gain.setValueAtTime(0.4, audioCtx.currentTime); // Louder chime
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2);
+            
             osc.connect(gain);
             gain.connect(audioCtx.destination);
             osc.start();
@@ -244,10 +211,7 @@
             const drift = setInterval(() => {
                 y += 1.5;
                 seed.style.top = y + 'px';
-                if (y > window.innerHeight || flowerCount >= 50) { 
-                    clearInterval(drift); 
-                    seed.remove(); 
-                }
+                if (y > window.innerHeight || flowerCount >= 50) { clearInterval(drift); seed.remove(); }
             }, 16);
         }
 
@@ -296,13 +260,8 @@
                 p.style.opacity = '0';
             });
 
-            setTimeout(() => {
-                bodies.forEach(b => b.style.opacity = '0');
-            }, 1000);
-
-            setTimeout(() => {
-                location.reload(); 
-            }, 5500);
+            setTimeout(() => { bodies.forEach(b => b.style.opacity = '0'); }, 1000);
+            setTimeout(() => { location.reload(); }, 5500);
         }
     </script>
 </body>
