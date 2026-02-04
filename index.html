@@ -17,9 +17,11 @@
             background: linear-gradient(to bottom, var(--sky-top), var(--sky-bottom));
         }
 
-        /* Setup Overlay */
+        /* Setup Overlay - Now with Sky Gradient */
         #setup-overlay {
-            position: fixed; inset: 0; background: white; z-index: 1000;
+            position: fixed; inset: 0; 
+            background: linear-gradient(to bottom, var(--sky-top), var(--sky-bottom));
+            z-index: 1000;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             padding: 20px; text-align: center; transition: opacity 1s;
         }
@@ -30,12 +32,13 @@
         }
 
         .choice-pill {
-            padding: 10px 20px; border: 2px solid #e0f6ff; border-radius: 25px;
-            cursor: pointer; transition: all 0.3s; color: #666; background: #f9f9f9;
+            padding: 10px 20px; border: 2px solid rgba(255,255,255,0.5); border-radius: 25px;
+            cursor: pointer; transition: all 0.3s; color: #444; background: rgba(255,255,255,0.4);
+            backdrop-filter: blur(5px);
         }
 
         .choice-pill.selected {
-            background: var(--sky-top); color: white; border-color: var(--sky-top);
+            background: white; color: var(--accent); border-color: white; font-weight: bold;
         }
 
         /* UI Elements */
@@ -43,19 +46,25 @@
             position: fixed; top: 20px; width: 100%;
             text-align: center; color: var(--accent); z-index: 100; pointer-events: none; display: none;
         }
-        #controls { position: fixed; top: 20px; right: 20px; z-index: 101; display: none;}
+        
+        /* Sound Toggle - Moved to Bottom Left */
+        #controls { 
+            position: fixed; bottom: 20px; left: 20px; z-index: 101; display: none;
+        }
         
         button#start-btn {
             padding: 15px 40px; border-radius: 30px; border: none;
             background: var(--accent); color: white; font-weight: bold;
             cursor: pointer; opacity: 0.5; pointer-events: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
         button#start-btn.active { opacity: 1; pointer-events: auto; }
 
         button.toggle {
-            padding: 10px 15px; border-radius: 20px; border: none;
-            background: white; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            font-weight: bold; color: var(--accent);
+            padding: 8px 15px; border-radius: 20px; border: none;
+            background: rgba(255,255,255,0.8); cursor: pointer; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            font-size: 12px; font-weight: bold; color: var(--accent);
         }
 
         /* Garden Layers */
@@ -100,8 +109,8 @@
 <body>
 
     <div id="setup-overlay">
-        <h2>Set Your Intentions</h2>
-        <p>Select 2 to 10 words to grow in your meadow</p>
+        <h2 style="color: var(--accent);">Set Your Intentions</h2>
+        <p style="color: var(--accent); opacity: 0.8;">Select 2 to 10 words to grow in your meadow</p>
         <div class="word-grid" id="word-selector"></div>
         <button id="start-btn" onclick="startGame()">Enter the Meadow</button>
     </div>
@@ -164,7 +173,7 @@
                 document.getElementById('setup-overlay').style.display = 'none';
                 document.getElementById('ui-layer').style.display = 'block';
                 document.getElementById('controls').style.display = 'block';
-                initAudio(); // Initialize but keep muted until toggle
+                initAudio();
                 setInterval(spawnSeed, 1800);
             }, 1000);
         }
@@ -210,9 +219,9 @@
 
         // --- Game Logic ---
         function spawnSeed() {
+            if (flowerCount >= 50) return;
             const seed = document.createElement('div');
             seed.className = 'seed';
-            // ONLY pick from the user's selected words
             seed.textContent = selectedWords[Math.floor(Math.random() * selectedWords.length)];
             const xPos = Math.random() * 80 + 10;
             seed.style.left = xPos + '%';
@@ -235,8 +244,10 @@
             const drift = setInterval(() => {
                 y += 1.5;
                 seed.style.top = y + 'px';
-                if (y > window.innerHeight) { clearInterval(drift); seed.remove(); }
-                if (flowerCount >= 50) { clearInterval(drift); seed.remove(); } // Stop spawning on release
+                if (y > window.innerHeight || flowerCount >= 50) { 
+                    clearInterval(drift); 
+                    seed.remove(); 
+                }
             }, 16);
         }
 
@@ -290,7 +301,7 @@
             }, 1000);
 
             setTimeout(() => {
-                location.reload(); // Returns to selection screen for a fresh cycle
+                location.reload(); 
             }, 5500);
         }
     </script>
