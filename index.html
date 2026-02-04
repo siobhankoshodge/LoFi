@@ -8,6 +8,7 @@
         :root {
             --sky-top: #87ceeb;
             --sky-bottom: #e0f6ff;
+            --accent: #4a7a8c;
         }
 
         body, html {
@@ -16,34 +17,60 @@
             background: linear-gradient(to bottom, var(--sky-top), var(--sky-bottom));
         }
 
-        /* UI & Sound Toggle */
-        #ui-layer {
-            position: fixed; top: 20px; width: 100%;
-            text-align: center; color: #4a7a8c; z-index: 100; pointer-events: none;
-        }
-        #controls {
-            position: fixed; top: 20px; right: 20px; z-index: 101;
-        }
-        button {
-            padding: 10px 15px; border-radius: 20px; border: none;
-            background: white; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            font-weight: bold; color: #4a7a8c; pointer-events: auto;
+        /* Setup Overlay */
+        #setup-overlay {
+            position: fixed; inset: 0; background: white; z-index: 1000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 20px; text-align: center; transition: opacity 1s;
         }
 
-        /* Layers */
+        .word-grid {
+            display: flex; flex-wrap: wrap; justify-content: center;
+            gap: 10px; max-width: 500px; margin: 20px 0;
+        }
+
+        .choice-pill {
+            padding: 10px 20px; border: 2px solid #e0f6ff; border-radius: 25px;
+            cursor: pointer; transition: all 0.3s; color: #666; background: #f9f9f9;
+        }
+
+        .choice-pill.selected {
+            background: var(--sky-top); color: white; border-color: var(--sky-top);
+        }
+
+        /* UI Elements */
+        #ui-layer {
+            position: fixed; top: 20px; width: 100%;
+            text-align: center; color: var(--accent); z-index: 100; pointer-events: none; display: none;
+        }
+        #controls { position: fixed; top: 20px; right: 20px; z-index: 101; display: none;}
+        
+        button#start-btn {
+            padding: 15px 40px; border-radius: 30px; border: none;
+            background: var(--accent); color: white; font-weight: bold;
+            cursor: pointer; opacity: 0.5; pointer-events: none;
+        }
+        button#start-btn.active { opacity: 1; pointer-events: auto; }
+
+        button.toggle {
+            padding: 10px 15px; border-radius: 20px; border: none;
+            background: white; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            font-weight: bold; color: var(--accent);
+        }
+
+        /* Garden Layers */
         .garden { z-index: 2; position: absolute; inset: 0; pointer-events: none; }
         .grass { z-index: 10; position: absolute; bottom: 0; width: 100%; height: 40px; background: #5ea300; border-top: 5px solid #74b816; }
         .label-layer { z-index: 11; position: absolute; bottom: 45px; width: 100%; pointer-events: none; }
         .seed-layer { z-index: 20; position: absolute; inset: 0; }
 
-        /* Seeds */
+        /* Seeds & Plants */
         .seed {
             position: absolute; padding: 12px 20px; background: white;
             border-radius: 30px; cursor: pointer; font-weight: 600;
             box-shadow: 0 8px 15px rgba(0,0,0,0.1); color: #555; touch-action: none;
         }
 
-        /* Botany */
         .plant { 
             position: absolute; bottom: 40px; display: flex; 
             flex-direction: column-reverse; align-items: center;
@@ -51,10 +78,7 @@
             animation: breeze 5s ease-in-out infinite alternate;
         }
 
-        @keyframes breeze { 
-            from { transform: rotate(-3deg); } 
-            to { transform: rotate(3deg); } 
-        }
+        @keyframes breeze { from { transform: rotate(-3deg); } to { transform: rotate(3deg); } }
         
         .stem { width: 6px; background: #74b816; transform-origin: bottom; transition: height 2s ease-out, opacity 3s; }
         .flower-head { position: relative; width: 20px; height: 20px; background: #ffec99; border-radius: 50%; z-index: 5; transition: opacity 3s; }
@@ -75,13 +99,20 @@
 </head>
 <body>
 
+    <div id="setup-overlay">
+        <h2>Set Your Intentions</h2>
+        <p>Select 2 to 10 words to grow in your meadow</p>
+        <div class="word-grid" id="word-selector"></div>
+        <button id="start-btn" onclick="startGame()">Enter the Meadow</button>
+    </div>
+
     <div id="ui-layer">
         <h1 style="margin:0;">Manifestation Meadow</h1>
         <p id="counter">0 / 50 Intentions</p>
     </div>
 
     <div id="controls">
-        <button id="soundToggle" onclick="toggleSound()">Sound: OFF</button>
+        <button class="toggle" id="soundToggle" onclick="toggleSound()">Sound: OFF</button>
     </div>
 
     <div class="garden" id="garden"></div>
@@ -90,14 +121,55 @@
     <div class="seed-layer" id="seed-container"></div>
 
     <script>
-        const words = ["Peace", "Clarity", "Growth", "Love", "Abundance", "Kindness", "Focus", "Joy", "Health", "Balance", "Courage", "Trust"];
+        const allWords = ["Peace", "Clarity", "Growth", "Love", "Abundance", "Kindness", "Focus", "Joy", "Health", "Balance", "Courage", "Trust", "Patience", "Wisdom", "Strength", "Grace"];
         const colors = ['#ffb6c1', '#add8e6', '#dda0dd', '#ffdab9', '#b0e0e6', '#fafad2'];
         
+        let selectedWords = [];
         let flowerCount = 0;
         let isMuted = true;
         let audioCtx;
         let droneOscs = [];
 
+        // --- Setup Logic ---
+        const grid = document.getElementById('word-selector');
+        allWords.forEach(word => {
+            const pill = document.createElement('div');
+            pill.className = 'choice-pill';
+            pill.textContent = word;
+            pill.onclick = () => {
+                if (pill.classList.contains('selected')) {
+                    pill.classList.remove('selected');
+                    selectedWords = selectedWords.filter(w => w !== word);
+                } else if (selectedWords.length < 10) {
+                    pill.classList.add('selected');
+                    selectedWords.push(word);
+                }
+                updateStartButton();
+            };
+            grid.appendChild(pill);
+        });
+
+        function updateStartButton() {
+            const btn = document.getElementById('start-btn');
+            if (selectedWords.length >= 2) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        }
+
+        function startGame() {
+            document.getElementById('setup-overlay').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('setup-overlay').style.display = 'none';
+                document.getElementById('ui-layer').style.display = 'block';
+                document.getElementById('controls').style.display = 'block';
+                initAudio(); // Initialize but keep muted until toggle
+                setInterval(spawnSeed, 1800);
+            }, 1000);
+        }
+
+        // --- Audio Logic ---
         function toggleSound() {
             if (!audioCtx) initAudio();
             isMuted = !isMuted;
@@ -107,6 +179,7 @@
         }
 
         function initAudio() {
+            if (audioCtx) return;
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             [110, 164.81, 220].forEach(freq => {
                 const osc = audioCtx.createOscillator();
@@ -135,14 +208,16 @@
             osc.stop(audioCtx.currentTime + 1.5);
         }
 
+        // --- Game Logic ---
         function spawnSeed() {
             const seed = document.createElement('div');
             seed.className = 'seed';
-            seed.textContent = words[Math.floor(Math.random() * words.length)];
+            // ONLY pick from the user's selected words
+            seed.textContent = selectedWords[Math.floor(Math.random() * selectedWords.length)];
             const xPos = Math.random() * 80 + 10;
             seed.style.left = xPos + '%';
             seed.style.top = '-60px';
-            seedContainer.appendChild(seed);
+            document.getElementById('seed-container').appendChild(seed);
 
             const handleCatch = () => {
                 playChime();
@@ -161,6 +236,7 @@
                 y += 1.5;
                 seed.style.top = y + 'px';
                 if (y > window.innerHeight) { clearInterval(drift); seed.remove(); }
+                if (flowerCount >= 50) { clearInterval(drift); seed.remove(); } // Stop spawning on release
             }, 16);
         }
 
@@ -187,13 +263,13 @@
 
             plant.appendChild(stem);
             plant.appendChild(head);
-            garden.appendChild(plant);
+            document.getElementById('garden').appendChild(plant);
 
             const pill = document.createElement('div');
             pill.className = 'word-pill';
             pill.textContent = word;
             pill.style.left = x + '%';
-            labels.appendChild(pill);
+            document.getElementById('labels').appendChild(pill);
 
             setTimeout(() => { stem.style.height = (Math.random() * 150 + 150) + 'px'; }, 50);
         }
@@ -202,7 +278,6 @@
             const petals = document.querySelectorAll('.petal');
             const bodies = document.querySelectorAll('.stem, .flower-head, .word-pill');
 
-            // 1. Petals fly away
             petals.forEach(p => {
                 const randomX = (Math.random() - 0.5) * 1500;
                 const randomRot = Math.random() * 1200 + 720;
@@ -210,24 +285,14 @@
                 p.style.opacity = '0';
             });
 
-            // 2. Stalks fade slowly after the petals start moving
             setTimeout(() => {
                 bodies.forEach(b => b.style.opacity = '0');
             }, 1000);
 
-            // 3. Purge and Restart
             setTimeout(() => {
-                garden.innerHTML = '';
-                labels.innerHTML = '';
-                flowerCount = 0;
-                document.getElementById('counter').textContent = `0 / 50 Intentions`;
-            }, 5000);
+                location.reload(); // Returns to selection screen for a fresh cycle
+            }, 5500);
         }
-
-        const seedContainer = document.getElementById('seed-container');
-        const garden = document.getElementById('garden');
-        const labels = document.getElementById('labels');
-        setInterval(spawnSeed, 1800);
     </script>
 </body>
 </html>
