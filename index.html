@@ -13,15 +13,21 @@
 
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
-            overflow: hidden; font-family: 'Segoe UI', sans-serif;
+            overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif;
             background: linear-gradient(to bottom, var(--sky-top), var(--sky-bottom));
         }
 
+        /* Instructions & Setup */
         #setup-overlay {
             position: fixed; inset: 0; 
             background: linear-gradient(to bottom, var(--sky-top), var(--sky-bottom));
             z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            padding: 20px; text-align: center; transition: opacity 1s;
+            padding: 30px; text-align: center; transition: opacity 1s;
+        }
+
+        .instructions {
+            max-width: 400px; margin-bottom: 25px; line-height: 1.6;
+            color: var(--accent); font-style: italic; font-size: 17px;
         }
 
         .word-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; max-width: 500px; margin: 20px 0; }
@@ -41,7 +47,8 @@
         button#start-btn {
             padding: 15px 40px; border-radius: 30px; border: none;
             background: var(--accent); color: white; font-weight: bold;
-            cursor: pointer; opacity: 0.5; pointer-events: none;
+            cursor: pointer; opacity: 0.4; pointer-events: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
         button#start-btn.active { opacity: 1; pointer-events: auto; }
 
@@ -51,6 +58,7 @@
             font-weight: bold; color: var(--accent);
         }
 
+        /* Visual Layers */
         .garden { z-index: 2; position: absolute; inset: 0; pointer-events: none; }
         .grass { z-index: 10; position: absolute; bottom: 0; width: 100%; height: 40px; background: #5ea300; border-top: 5px solid #74b816; }
         .label-layer { z-index: 11; position: absolute; bottom: 45px; width: 100%; pointer-events: none; }
@@ -73,196 +81,10 @@
 <body>
 
     <div id="setup-overlay">
-        <h2 style="color: var(--accent);">Set Your Intentions</h2>
-        <p style="color: var(--accent); opacity: 0.8;">Select 2 to 10 words to grow in your meadow</p>
+        <h1 style="color: var(--accent); margin-bottom: 10px;">Manifestation Meadow</h1>
+        <div class="instructions">
+            Choose your manifestation, take a moment, and be mindful in the meadow with your words.
+        </div>
+        <p style="color: var(--accent); font-size: 14px; margin-bottom: 5px; opacity: 0.7;">Select 2 to 10 intentions:</p>
         <div class="word-grid" id="word-selector"></div>
-        <button id="start-btn" onclick="startGame()">Enter the Meadow</button>
-    </div>
-
-    <div id="ui-layer">
-        <h1 style="margin:0;">Manifestation Meadow</h1>
-        <p id="counter">0 / 50 Intentions</p>
-    </div>
-
-    <div id="controls">
-        <button class="toggle" id="soundToggle" onclick="toggleSound()">Sound: OFF</button>
-    </div>
-
-    <div class="garden" id="garden"></div>
-    <div class="grass"></div>
-    <div class="label-layer" id="labels"></div>
-    <div class="seed-layer" id="seed-container"></div>
-
-    <script>
-        const allWords = ["Peace", "Clarity", "Growth", "Love", "Abundance", "Kindness", "Focus", "Joy", "Health", "Balance", "Courage", "Trust", "Patience", "Wisdom", "Strength", "Grace"];
-        const colors = ['#ffb6c1', '#add8e6', '#dda0dd', '#ffdab9', '#b0e0e6', '#fafad2'];
-        
-        let selectedWords = [];
-        let flowerCount = 0;
-        let isMuted = true;
-        let audioCtx;
-        let droneGains = [];
-
-        // --- Setup Grid ---
-        const grid = document.getElementById('word-selector');
-        allWords.forEach(word => {
-            const pill = document.createElement('div');
-            pill.className = 'choice-pill';
-            pill.textContent = word;
-            pill.onclick = () => {
-                if (pill.classList.contains('selected')) {
-                    pill.classList.remove('selected');
-                    selectedWords = selectedWords.filter(w => w !== word);
-                } else if (selectedWords.length < 10) {
-                    pill.classList.add('selected');
-                    selectedWords.push(word);
-                }
-                document.getElementById('start-btn').className = selectedWords.length >= 2 ? 'active' : '';
-            };
-            grid.appendChild(pill);
-        });
-
-        function startGame() {
-            document.getElementById('setup-overlay').style.opacity = '0';
-            setTimeout(() => {
-                document.getElementById('setup-overlay').style.display = 'none';
-                document.getElementById('ui-layer').style.display = 'block';
-                document.getElementById('controls').style.display = 'block';
-                initAudio(); 
-                setInterval(spawnSeed, 1800);
-            }, 1000);
-        }
-
-        // --- FIXED AUDIO ENGINE ---
-        function initAudio() {
-            if (audioCtx) return;
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            
-            [110, 164.81, 220].forEach(freq => {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'sine';
-                osc.frequency.value = freq;
-                gain.gain.value = 0; // Start silent
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start();
-                droneGains.push(gain);
-            });
-        }
-
-        async function toggleSound() {
-            if (!audioCtx) initAudio();
-            
-            // Critical for Chrome/Mobile: Resume context on user click
-            if (audioCtx.state === 'suspended') {
-                await audioCtx.resume();
-            }
-
-            isMuted = !isMuted;
-            document.getElementById('soundToggle').textContent = isMuted ? "Sound: OFF" : "Sound: ON";
-            
-            const targetVolume = isMuted ? 0 : 0.02;
-            droneGains.forEach(g => {
-                g.gain.setTargetAtTime(targetVolume, audioCtx.currentTime, 0.2);
-            });
-        }
-
-        function playChime() {
-            if (isMuted || !audioCtx) return;
-            const freqs = [523.25, 587.33, 659.25, 783.99, 880.00]; 
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            
-            osc.frequency.setValueAtTime(freqs[Math.floor(Math.random()*freqs.length)], audioCtx.currentTime);
-            gain.gain.setValueAtTime(0.4, audioCtx.currentTime); // Louder chime
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2);
-            
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 1.5);
-        }
-
-        // --- Game Logic ---
-        function spawnSeed() {
-            if (flowerCount >= 50) return;
-            const seed = document.createElement('div');
-            seed.className = 'seed';
-            seed.textContent = selectedWords[Math.floor(Math.random() * selectedWords.length)];
-            const xPos = Math.random() * 80 + 10;
-            seed.style.left = xPos + '%';
-            seed.style.top = '-60px';
-            document.getElementById('seed-container').appendChild(seed);
-
-            const handleCatch = () => {
-                playChime();
-                createFlower(xPos, seed.textContent);
-                seed.remove();
-                flowerCount++;
-                document.getElementById('counter').textContent = `${flowerCount} / 50 Intentions`;
-                if (flowerCount >= 50) releaseGarden();
-            };
-
-            seed.onmousedown = handleCatch;
-            seed.ontouchstart = (e) => { e.preventDefault(); handleCatch(); };
-
-            let y = -60;
-            const drift = setInterval(() => {
-                y += 1.5;
-                seed.style.top = y + 'px';
-                if (y > window.innerHeight || flowerCount >= 50) { clearInterval(drift); seed.remove(); }
-            }, 16);
-        }
-
-        function createFlower(x, word) {
-            const color = colors[Math.floor(Math.random() * colors.length)];
-            const plant = document.createElement('div');
-            plant.className = 'plant';
-            plant.style.left = x + '%';
-            plant.style.animationDelay = `-${Math.random() * 5}s`;
-
-            const head = document.createElement('div');
-            head.className = 'flower-head';
-            for (let i = 0; i < 6; i++) {
-                const petal = document.createElement('div');
-                petal.className = 'petal';
-                petal.style.backgroundColor = color;
-                petal.style.transform = `rotate(${i * 60}deg)`;
-                head.appendChild(petal);
-            }
-
-            const stem = document.createElement('div');
-            stem.className = 'stem';
-            stem.style.height = '0px';
-
-            plant.appendChild(stem);
-            plant.appendChild(head);
-            document.getElementById('garden').appendChild(plant);
-
-            const pill = document.createElement('div');
-            pill.className = 'word-pill';
-            pill.textContent = word;
-            pill.style.left = x + '%';
-            document.getElementById('labels').appendChild(pill);
-
-            setTimeout(() => { stem.style.height = (Math.random() * 150 + 150) + 'px'; }, 50);
-        }
-
-        function releaseGarden() {
-            const petals = document.querySelectorAll('.petal');
-            const bodies = document.querySelectorAll('.stem, .flower-head, .word-pill');
-
-            petals.forEach(p => {
-                const randomX = (Math.random() - 0.5) * 1500;
-                const randomRot = Math.random() * 1200 + 720;
-                p.style.transform += ` translate(${randomX}px, -120vh) rotate(${randomRot}deg)`;
-                p.style.opacity = '0';
-            });
-
-            setTimeout(() => { bodies.forEach(b => b.style.opacity = '0'); }, 1000);
-            setTimeout(() => { location.reload(); }, 5500);
-        }
-    </script>
-</body>
-</html>
+        <button id="start-
